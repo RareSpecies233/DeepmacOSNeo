@@ -1,8 +1,10 @@
 import SwiftUI
 
 /// 助手正文容器。
-/// 解析结果按「文本」做进程内缓存，流式期间每帧只增加一次 O(n) 解析，
-/// 已完成消息则直接命中缓存，不重复解析。
+///
+/// 说明：这里**同步**解析并缓存（最近 8 段），而不是用 `MarkdownView` 的异步路径。
+/// 实测异步路径在流式消息重渲染下会出现 document 未落地、正文空白的问题；
+/// 同步解析 5KB 约 0.5ms，流式期间成本可接受。待 `MarkdownView` 的状态落地问题修好后可切回。
 struct AssistantBody: View {
     let text: String
     let isStreaming: Bool
@@ -33,10 +35,7 @@ final class MarkdownDocumentCache: @unchecked Sendable {
 
     func document(for text: String) -> MarkdownDocument {
         lock.lock()
-        if let hit = storage[text] {
-            lock.unlock()
-            return hit
-        }
+        if let hit = storage[text] { lock.unlock(); return hit }
         lock.unlock()
 
         let parsed = MarkdownParser.parse(text)
