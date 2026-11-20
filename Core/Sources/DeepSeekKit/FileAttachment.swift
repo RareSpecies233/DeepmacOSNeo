@@ -57,13 +57,12 @@ public struct FileAttachment: Codable, Sendable, Hashable, Identifiable {
     /// 便捷构造：从本地文件 URL 读取名称、大小与 MIME。
     /// 读不到大小（例如文件已被移动）时按 0 处理，由上传阶段报错。
     public init(id: String = UUID().uuidString, fileURL: URL) {
-        let values = try? fileURL.resourceValues(forKeys: [.fileSizeKey, .contentTypeKey])
-        let name = fileURL.lastPathComponent
-        let mime = values?.contentType?.preferredMIMEType
-            ?? FileAttachment.mimeType(forExtension: fileURL.pathExtension)
+        let values = try? fileURL.resourceValues(forKeys: [.fileSizeKey])
+        // 这里只 import Foundation：MIME 按扩展名推断，调用方拿到系统类型时可覆盖。
+        let mime = FileAttachment.mimeType(forExtension: fileURL.pathExtension)
         self.init(
             id: id,
-            filename: name,
+            filename: fileURL.lastPathComponent,
             mimeType: mime,
             byteSize: values?.fileSize ?? 0,
             localPath: fileURL.path,

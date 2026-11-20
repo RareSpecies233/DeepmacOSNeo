@@ -62,11 +62,7 @@ struct RootView: View {
                     onSelect: { store.select($0) },
                     onNewChat: nil
                 )
-                .overlay(alignment: .trailing) {
-                    Rectangle()
-                        .fill(DS.Colors.borderL1)
-                        .frame(width: 1)
-                }
+
                 EmptyView()
             }
             detail

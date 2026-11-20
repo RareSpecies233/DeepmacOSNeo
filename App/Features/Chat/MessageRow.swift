@@ -82,6 +82,9 @@ struct MessageRow: View {
                     }
                 }
             }
+            if !message.plainText.isEmpty {
+                ReadAloudButton(text: message.plainText)
+            }
             if isLastAssistant && !isStreaming, let onRegenerate {
                 ActionIcon(systemName: "arrow.clockwise", help: "重新生成", action: onRegenerate)
             }

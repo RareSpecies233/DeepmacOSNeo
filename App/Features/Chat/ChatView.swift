@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// 会话主视图：消息列表 + 底部输入框
 struct ChatView: View {
@@ -12,6 +13,11 @@ struct ChatView: View {
     private var isStreaming: Bool { store.isStreaming(sessionID) }
 
     private let bottomAnchor = "chat-bottom"
+    /// 是否跟随到底部：用户向上滑后置 false，避免流式生成时抢滚动
+    @State private var followBottom = true
+    @State private var lastAutoScroll = Date.distantPast
+    @State private var showFileImporter = false
+    @State private var uploader = FileUploader()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -79,13 +85,75 @@ struct ChatView: View {
             }
             .frame(maxWidth: DS.Metrics.messageListMaxWidth)
             .centeredColumn()
+            .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                // 距底部还有多远（>0 表示已经离开底部）
+                geometry.contentSize.height - (geometry.contentOffset.y + geometry.containerSize.height)
+            } action: { _, distanceFromBottom in
+                let atBottom = distanceFromBottom < 40
+                if atBottom != followBottom {
+                    followBottom = atBottom
+                }
+            }
             .onChange(of: scrollSignature) { _, _ in
+                guard followBottom else { return }
+                // 流式期间节流，避免每个 token 都触发一次滚动导致卡顿
+                let now = Date()
+                guard now.timeIntervalSince(lastAutoScroll) > 0.08 else { return }
+                lastAutoScroll = now
                 proxy.scrollTo(bottomAnchor, anchor: .bottom)
             }
             .onAppear {
                 proxy.scrollTo(bottomAnchor, anchor: .bottom)
             }
+            .overlay(alignment: .bottomTrailing) {
+                if !followBottom {
+                    Button {
+                        followBottom = true
+                        withAnimation(DS.Motion.fastEase) {
+                            proxy.scrollTo(bottomAnchor, anchor: .bottom)
+                        }
+                    } label: {
+                        Image(systemName: "arrow.down")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(DS.Colors.labelSecondary)
+                            .frame(width: 32, height: 32)
+                            .background {
+                                Circle()
+                                    .fill(DS.Colors.bgBase.opacity(0.92))
+                                    .glassEffect(.regular.interactive(), in: .circle)
+                            }
+                            .overlay {
+                                Circle().strokeBorder(DS.Colors.borderL2, lineWidth: 1)
+                            }
+                    }
+                    .buttonStyle(.plain)
+                    .help("回到最新")
+                    .padding(.trailing, 12)
+                    .padding(.bottom, 8)
+                }
+            }
         }
+    }
+
+    private var canSend: Bool {
+        let hasText = !(session?.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+        let hasFiles = session?.draftAttachments.contains { $0.state == .ready } ?? false
+        return hasText || hasFiles
+    }
+
+    private func retryAttachment(_ id: String) {
+        guard let item = session?.draftAttachments.first(where: { $0.id == id }),
+              let path = item.localPath else { return }
+        store.updateDraftAttachment(id, in: sessionID) { $0.retrying() }
+        AttachmentIngest.ingest(
+            [URL(fileURLWithPath: path)],
+            settings: settings,
+            uploader: uploader,
+            add: { _ in },
+            update: { uploaded in
+                store.updateDraftAttachment(id, in: sessionID) { _ in uploaded }
+            }
+        )
     }
 
     /// 用于触发滚动的轻量签名：消息条数 + 末条内容长度
@@ -111,13 +179,37 @@ struct ChatView: View {
                 set: { store.setSearch(sessionID, $0) }
             ),
             isStreaming: isStreaming,
-            canSend: !(session?.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true),
-            onSend: { _ = store.send(text: session?.draft ?? "", in: sessionID) },
-            onStop: { store.stop(sessionID: sessionID) }
+            canSend: canSend,
+            onSend: { _ = store.send(text: session?.draft ?? "",
+                                      attachments: session?.draftAttachments ?? [],
+                                      in: sessionID) },
+            onStop: { store.stop(sessionID: sessionID) },
+            onAttach: { showFileImporter = true },
+            attachments: session?.draftAttachments ?? [],
+            attachmentProgress: store.uploadProgress,
+            onRemoveAttachment: { store.removeDraftAttachment($0, in: sessionID) },
+            onRetryAttachment: { retryAttachment($0) }
         )
         .padding(.horizontal, DS.Metrics.messageListPadding)
         .frame(maxWidth: DS.Metrics.messageListMaxWidth)
         .centeredColumn()
         .padding(.bottom, 16)
+        .fileImporter(
+            isPresented: $showFileImporter,
+            allowedContentTypes: [.item],
+            allowsMultipleSelection: true
+        ) { result in
+            if case let .success(urls) = result {
+                AttachmentIngest.ingest(
+                    urls,
+                    settings: settings,
+                    uploader: uploader,
+                    add: { store.addDraftAttachment($0, in: sessionID) },
+                    update: { item in
+                        store.updateDraftAttachment(item.id, in: sessionID) { _ in item }
+                    }
+                )
+            }
+        }
     }
 }

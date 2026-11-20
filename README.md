@@ -38,6 +38,9 @@
 
 **其它**
 - 会话：新建 / 重命名 / 删除 / 置顶 / 按「今天·昨天·7 天内·30 天内·按月」分组 / 搜索词高亮
+- 附件：选择文件上传到 Files API（图片走 image 块、文档走 document 块），支持失败重试与移除
+- 语音：输入框内听写（Speech framework）、消息朗读（AVSpeechSynthesizer）
+- 账户余额：侧栏底部显示余额（`GET /user/balance`），可在设置里关闭
 - 设置：API Key（Keychain + `GET /models` 校验三态）、接口地址（可切本地 Mock）、模型选择、深度思考 / 智能搜索开关、主题三态
 - 持久化：自动保存会话与草稿；API Key 只进 Keychain
 - 三端适配：macOS 隐藏标题栏 + 菜单命令；iPad 分栏；iPhone 抽屉 + 吸底输入框
@@ -140,9 +143,15 @@ scripts/            工程生成、构建、截图、mock 服务
 
 ```bash
 swift test --package-path Core
-# Executed 92 tests, with 1 test skipped and 0 failures
+# Executed 107 tests, with 1 test skipped and 0 failures
 ```
+
+## 对比与差异
+
+- [docs/FIDELITY.md](docs/FIDELITY.md)：与原版 Web 的实测对照（261 / 840 / 776 / 14px 等逐项）
+- [docs/DEVIATIONS.md](docs/DEVIATIONS.md)：有意的设计差异与已知不一致
 
 ## 已知未实现
 
-附件上传、语音输入、朗读、消息分支切换、中英文切换。详见 [docs/DEVIATIONS.md](docs/DEVIATIONS.md) 与 [PLAN.md](PLAN.md) 的 P1/P2 清单。
+消息分支切换（重新生成会替换末尾回复）、中英文切换、引用角标内联跳转、拖拽入附件。
+详见 [PLAN.md](PLAN.md) 的 P1/P2 清单。

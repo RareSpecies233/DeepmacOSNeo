@@ -180,20 +180,10 @@ struct SiderView: View {
     }
 
     private var sidebarBackground: some View {
-        ZStack {
-            #if os(macOS)
-            // 窗口透明 + 原生侧栏材质：模糊后方内容，保证长文阅读时的可读性
-            if reduceTransparency {
-                DS.Colors.sidebarFill
-            } else {
-                VisualEffectBackground(material: .sidebar, blending: .withinWindow)
-                DS.Colors.sidebarFill.opacity(0.55)
-            }
-            #else
-            DS.Colors.sidebarFill
-            #endif
-        }
-        .ignoresSafeArea()
+        // 与原版一致：侧栏是实色面（亮 #F9FAFB / 暗 #1B1B1C）。
+        // 之前叠加系统材质会把深色侧栏抬亮到 #272727，并在接缝处形成一条亮缝。
+        DS.Colors.sidebarFill
+            .ignoresSafeArea()
     }
 
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency

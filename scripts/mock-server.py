@@ -7,7 +7,16 @@
 
 接口：
   GET  /models                   -> {"data":[{"id":"deepseek-flash"}]}
+  GET  /user/balance             -> {"is_available":true,"balance_infos":[...]}
+  POST /anthropic/v1/files       -> multipart 上传，返回 Files API 文件对象
+  DELETE /anthropic/v1/files/{id}-> 删除已上传文件
   POST /anthropic/v1/messages    -> 校验 Content-Type / stream=true 后输出完整 SSE 事件序列
+
+POST /anthropic/v1/files 的校验（与真实服务端一致，便于联调时暴露协议错误）：
+  - 必须带 x-api-key；
+  - 必须带 anthropic-beta: files-api-2025-04-14；
+  - multipart 字段顺序固定：purpose（可选，图片不传）在前，file 在后；
+  - purpose 只接受 rich_layout_recognition / user_data。
 
 事件序列（与真实服务端同形，帧间隔 0.03s）：
   message_start
@@ -29,6 +38,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 import time
 import uuid
@@ -108,6 +118,80 @@ TEXT_CHUNKS = [
 
 CITATION_AFTER = 8  # 第 8 段之后插入引用
 
+# GET /user/balance 的真实响应形状（BalanceStore 消费 is_available + balance_infos）
+BALANCE = {
+    "is_available": True,
+    "balance_infos": [
+        {
+            "currency": "CNY",
+            "total_balance": "110.00",
+            "granted_balance": "10.00",
+            "topped_up_balance": "100.00",
+        }
+    ],
+}
+
+# 已上传文件：file_id -> 记录（只在内存里，重启即清空）
+FILES: dict[str, dict] = {}
+
+FILENAME_RE = re.compile(r'filename="([^"]*)"')
+NAME_RE = re.compile(r'name="([^"]*)"')
+
+
+def message_file_ids(body: dict) -> list[str]:
+    """取出消息里 image / document 块引用的 file_id（按出现顺序）。"""
+    ids: list[str] = []
+    for message in body.get("messages") or []:
+        content = message.get("content")
+        if not isinstance(content, list):
+            continue
+        for block in content:
+            if not isinstance(block, dict) or block.get("type") not in ("image", "document"):
+                continue
+            source = block.get("source") or {}
+            if source.get("type") == "file" and isinstance(source.get("file_id"), str):
+                ids.append(source["file_id"])
+    return ids
+
+
+def parse_multipart(body: bytes, boundary: str) -> list[dict]:
+    """按 boundary 切分 multipart/form-data，返回 name/filename/content_type/data。"""
+    marker = ("--" + boundary).encode("utf-8")
+    fields: list[dict] = []
+    for section in body.split(marker):
+        if not section or section.startswith(b"--"):
+            continue
+        # 每段以 CRLF 开头，正文末尾也有 CRLF；只裁掉这两处包装
+        section = section.lstrip(b"\r\n")
+        if not section:
+            continue
+        head, sep, data = section.partition(b"\r\n\r\n")
+        if not sep:
+            continue
+        if data.endswith(b"\r\n"):
+            data = data[:-2]
+        headers: dict[str, str] = {}
+        for line in head.split(b"\r\n"):
+            key, colon, value = line.partition(b":")
+            if colon:
+                headers[key.strip().lower().decode("utf-8", "replace")] = value.strip().decode(
+                    "utf-8", "replace"
+                )
+        disposition = headers.get("content-disposition", "")
+        name_match = NAME_RE.search(disposition)
+        if not name_match:
+            continue
+        filename_match = FILENAME_RE.search(disposition)
+        fields.append(
+            {
+                "name": name_match.group(1),
+                "filename": filename_match.group(1) if filename_match else None,
+                "content_type": headers.get("content-type"),
+                "data": data,
+            }
+        )
+    return fields
+
 
 class Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
@@ -135,12 +219,18 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/models":
             self.send_json(200, {"data": [{"id": "deepseek-flash"}]})
             return
+        if path == "/user/balance":
+            self.send_json(200, BALANCE)
+            return
         self.send_json(404, {"error": {"message": "not found"}})
 
     # ---------- POST ----------
 
     def do_POST(self) -> None:  # noqa: N802 - 基类约定
         path = self.path.split("?", 1)[0]
+        if path == "/anthropic/v1/files":
+            self.upload_file()
+            return
         if path != "/anthropic/v1/messages":
             self.send_json(404, {"error": {"message": "not found"}})
             return
@@ -165,7 +255,130 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(400, {"error": {"message": "stream must be true"}})
             return
 
+        # 引用已上传文件时必须带 Files API beta，且 file_id 必须真实存在
+        file_ids = message_file_ids(body)
+        if file_ids:
+            beta = self.headers.get("anthropic-beta") or ""
+            if "files-api-2025-04-14" not in beta:
+                self.send_json(
+                    400,
+                    {"error": {"message": "missing anthropic-beta: files-api-2025-04-14"}},
+                )
+                return
+            missing = [file_id for file_id in file_ids if file_id not in FILES]
+            if missing:
+                self.send_json(
+                    400,
+                    {
+                        "error": {
+                            "message": "file_ids do not exist or are not created under your account: {}".format(
+                                ", ".join(missing)
+                            )
+                        }
+                    },
+                )
+                return
+            self.log_message("file blocks: %s", ", ".join(file_ids))
+
         self.stream_message(body)
+
+    # ---------- Files API ----------
+
+    def upload_file(self) -> None:
+        """POST /anthropic/v1/files：校验鉴权头、beta、multipart 与字段顺序。"""
+        if not (self.headers.get("x-api-key") or "").strip():
+            self.send_json(401, {"error": {"message": "missing x-api-key header"}})
+            return
+        beta = self.headers.get("anthropic-beta") or ""
+        if "files-api-2025-04-14" not in beta:
+            self.send_json(
+                400,
+                {"error": {"message": "missing anthropic-beta: files-api-2025-04-14"}},
+            )
+            return
+
+        content_type = self.headers.get("Content-Type") or ""
+        boundary = None
+        for piece in content_type.split(";"):
+            key, _, value = piece.strip().partition("=")
+            if key.lower() == "boundary":
+                boundary = value.strip().strip('"')
+        if "multipart/form-data" not in content_type.lower() or not boundary:
+            self.send_json(
+                415,
+                {"error": {"message": "Content-Type must be multipart/form-data with boundary"}},
+            )
+            return
+
+        length = int(self.headers.get("Content-Length") or 0)
+        if length <= 0:
+            self.send_json(400, {"error": {"message": "empty body"}})
+            return
+        parts = parse_multipart(self.rfile.read(length), boundary)
+        names = [part["name"] for part in parts]
+
+        if names.count("file") != 1:
+            self.send_json(400, {"error": {"message": "exactly one file field is required"}})
+            return
+        file_part = next(part for part in parts if part["name"] == "file")
+        purpose_parts = [part for part in parts if part["name"] == "purpose"]
+        purpose = (
+            purpose_parts[0]["data"].decode("utf-8", "replace").strip()
+            if purpose_parts
+            else None
+        )
+        if purpose is not None and purpose not in ("rich_layout_recognition", "user_data"):
+            self.send_json(400, {"error": {"message": "unsupported purpose: {}".format(purpose)}})
+            return
+        # 字段顺序固定：purpose 必须排在 file 之前
+        if purpose_parts and names.index("purpose") > names.index("file"):
+            self.send_json(
+                400,
+                {"error": {"message": "purpose must precede file in multipart body"}},
+            )
+            return
+
+        filename = file_part["filename"] or "file"
+        mime_type = file_part["content_type"] or "application/octet-stream"
+        data = file_part["data"]
+        file_id = "file-api-" + uuid.uuid4().hex[:24]
+        record = {
+            "id": file_id,
+            "type": "file",
+            "size_bytes": len(data),
+            "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "filename": filename,
+            "mime_type": mime_type,
+            "purpose": purpose,
+        }
+        FILES[file_id] = record
+        self.log_message(
+            "uploaded %s (%s, %d bytes, purpose=%s)", file_id, filename, len(data), purpose
+        )
+        self.send_json(
+            200,
+            {key: record[key] for key in (
+                "id", "type", "size_bytes", "created_at", "filename", "mime_type"
+            )},
+        )
+
+    def delete_file(self, file_id: str) -> None:
+        if not (self.headers.get("x-api-key") or "").strip():
+            self.send_json(401, {"error": {"message": "missing x-api-key header"}})
+            return
+        if FILES.pop(file_id, None) is None:
+            self.send_json(404, {"error": {"message": "file not found: {}".format(file_id)}})
+            return
+        self.log_message("deleted %s", file_id)
+        self.send_json(200, {"id": file_id, "type": "file_deleted", "deleted": True})
+
+    def do_DELETE(self) -> None:  # noqa: N802 - 基类约定
+        path = self.path.split("?", 1)[0]
+        prefix = "/anthropic/v1/files/"
+        if path.startswith(prefix):
+            self.delete_file(path[len(prefix):])
+            return
+        self.send_json(404, {"error": {"message": "not found"}})
 
     # ---------- SSE ----------
 
@@ -343,6 +556,9 @@ def main() -> None:
     server.daemon_threads = True
     print(f"DeepGlass mock server listening on http://{HOST}:{PORT}", flush=True)
     print("  GET  /models", flush=True)
+    print("  GET  /user/balance", flush=True)
+    print("  POST /anthropic/v1/files", flush=True)
+    print("  DELETE /anthropic/v1/files/{file_id}", flush=True)
     print("  POST /anthropic/v1/messages", flush=True)
     try:
         server.serve_forever()

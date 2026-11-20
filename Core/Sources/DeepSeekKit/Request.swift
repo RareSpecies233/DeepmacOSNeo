@@ -157,6 +157,10 @@ public struct RequestMessage: Sendable, Encodable {
             case .searchResults:
                 // 历史搜索结果不回传。
                 textIndex = nil
+
+            case .file:
+                // 附件只存在于 user 消息；assistant 历史里即使出现也不回传。
+                textIndex = nil
             }
         }
 
@@ -238,6 +242,9 @@ public struct ChatRequest: Sendable, Encodable {
         }
         return result
     }
+
+    /// 请求里是否含附件：客户端据此附带 `anthropic-beta: files-api-2025-04-14`。
+    public var hasFiles: Bool { messages.contains { $0.hasFiles } }
 }
 
 // MARK: - 线格式
@@ -257,6 +264,32 @@ private struct TitleFlag: Encodable {
 private struct ToolFlag: Encodable {
     let type: String
     let name: String
+}
+
+/// 用户消息里的文本块（只有带附件时才会显式写出 text 块）。
+private struct WireTextBlock: Encodable {
+    let text: String
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: WireKey.self)
+        try container.encode("text", forKey: WireKey("type"))
+        try container.encode(text, forKey: WireKey("text"))
+    }
+}
+
+/// 引用 Files API 文件的内容块：
+/// `{"type":"image"|"document","source":{"type":"file","file_id":"..."}}`
+private struct WireFileBlock: Encodable {
+    let blockType: String
+    let fileID: String
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: WireKey.self)
+        try container.encode(blockType, forKey: WireKey("type"))
+        var source = container.nestedContainer(keyedBy: WireKey.self, forKey: WireKey("source"))
+        try source.encode("file", forKey: WireKey("type"))
+        try source.encode(fileID, forKey: WireKey("file_id"))
+    }
 }
 
 /// 允许任意字符串键的容器。

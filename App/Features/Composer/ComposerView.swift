@@ -12,6 +12,10 @@ struct ComposerView: View {
     var onStop: () -> Void
     var onAttach: (() -> Void)? = nil
     var isHome: Bool = false
+    var attachments: [FileAttachment] = []
+    var attachmentProgress: [String: Double] = [:]
+    var onRemoveAttachment: ((String) -> Void)? = nil
+    var onRetryAttachment: ((String) -> Void)? = nil
 
     @FocusState private var focused: Bool
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
@@ -19,6 +23,15 @@ struct ComposerView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            if !attachments.isEmpty {
+                AttachmentStrip(
+                    items: attachments,
+                    onRemove: { onRemoveAttachment?($0) },
+                    onRetry: { onRetryAttachment?($0) },
+                    progress: attachmentProgress
+                )
+                .padding(.top, 12)
+            }
             field
             functionRow
         }
@@ -28,7 +41,7 @@ struct ComposerView: View {
                 .strokeBorder(dynAlpha(0x000000, 0.10, 0xFFFFFF, 0.06), lineWidth: 1)
         }
         .clipShape(RoundedRectangle(cornerRadius: 24))
-        .shadow(color: .black.opacity(isHome ? 0.03 : 0.02), radius: isHome ? 24 : 6, y: isHome ? 18 : 2)
+        .shadow(color: .black.opacity(isHome ? 0.18 : 0.12), radius: isHome ? 30 : 10, y: isHome ? 16 : 4)
     }
 
     // MARK: 文本区
@@ -65,6 +78,7 @@ struct ComposerView: View {
             TogglePill(isOn: $search, systemImage: "globe", title: "智能搜索",
                        help: "按需搜索网页")
             Spacer(minLength: 0)
+            VoiceInputButton(text: $text)
             if let onAttach {
                 Button(action: onAttach) {
                     Image(systemName: "paperclip")
@@ -114,10 +128,22 @@ struct ComposerView: View {
         if reduceTransparency {
             RoundedRectangle(cornerRadius: 24).fill(DS.Colors.inputFill)
         } else {
-            // 玻璃必须与同一容器内的其他玻璃元素同组，这里单独成组（输入框内没有别的玻璃）
+            // 玻璃层次：半透明底 → 玻璃 → 顶部高光。
+            // 纯实色会让 glassEffect 完全不可见，只剩一个灰盒子。
             RoundedRectangle(cornerRadius: 24)
-                .fill(DS.Colors.inputFill.opacity(0.55))
+                .fill(DS.Colors.inputFill.opacity(0.72))
                 .glassEffect(.regular, in: .rect(cornerRadius: 24))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [.white.opacity(0.18), .white.opacity(0.02)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 1
+                        )
+                }
         }
     }
 }

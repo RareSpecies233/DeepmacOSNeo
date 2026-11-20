@@ -6,6 +6,8 @@ public enum DeepSeekDefaults {
     public static let apiOrigin = URL(string: "https://api.deepseek.com")!
     /// 官方客户端使用的系统提示词。
     public static let systemPrompt = "该助手为DeepSeek，由深度求索公司创造。"
+    /// Files API 与「通过 file_id 引用文件」时必须携带的 beta 标记。
+    public static let filesBeta = "files-api-2025-04-14"
 }
 
 /// DeepSeek Messages API（Anthropic 兼容格式）客户端。
@@ -89,6 +91,10 @@ public struct DeepSeekClient: Sendable {
         urlRequest.setValue(apiKey, forHTTPHeaderField: "x-api-key")
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
         urlRequest.setValue("text/event-stream", forHTTPHeaderField: "Accept")
+        // 通过 file_id 引用已上传文件时必须声明 Files API beta；纯文本聊天不携带。
+        if request.hasFiles {
+            urlRequest.setValue(DeepSeekDefaults.filesBeta, forHTTPHeaderField: "anthropic-beta")
+        }
         urlRequest.timeoutInterval = 300
 
         do {

@@ -15,6 +15,11 @@ struct ChatSession: Identifiable, Codable, Hashable {
     var search: Bool = true
     var draft: String = ""
     var messages: [ChatMessage] = []
+    /// 注意：必须是 Optional。合成 Codable 对非可选字段会用 decode（而非 decodeIfPresent），
+    /// 旧版本 sessions.json 缺这个 key 会直接抛错，load() 里的 try? 会静默清空全部会话。
+    var pendingAttachments: [FileAttachment]?
+
+    var draftAttachments: [FileAttachment] { pendingAttachments ?? [] }
 
     var displayTitle: String {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -102,9 +107,9 @@ final class ChatStore {
 
     /// 从欢迎页发第一条消息：此时才创建会话。
     @discardableResult
-    func sendNewConversation(text: String) -> Bool {
+    func sendNewConversation(text: String, attachments: [FileAttachment] = []) -> Bool {
         let id = newSession()
-        return send(text: text, in: id)
+        return send(text: text, attachments: attachments, in: id)
     }
 
     @discardableResult
@@ -171,21 +176,64 @@ final class ChatStore {
         scheduleSave()
     }
 
+    // MARK: 附件
+
+    /// 上传进度（按附件 id），仅内存
+    private(set) var uploadProgress: [String: Double] = [:]
+
+    func setProgress(_ value: Double, for id: String) {
+        uploadProgress[id] = value
+    }
+
+    func addDraftAttachment(_ attachment: FileAttachment, in sessionID: UUID) {
+        guard let i = index(of: sessionID) else { return }
+        var list = sessions[i].draftAttachments
+        list.append(attachment)
+        sessions[i].pendingAttachments = list
+        scheduleSave()
+    }
+
+    func updateDraftAttachment(_ id: String, in sessionID: UUID, _ transform: (FileAttachment) -> FileAttachment) {
+        guard let i = index(of: sessionID) else { return }
+        var list = sessions[i].draftAttachments
+        guard let index = list.firstIndex(where: { $0.id == id }) else { return }
+        list[index] = transform(list[index])
+        sessions[i].pendingAttachments = list
+        if list[index].state != .uploading { uploadProgress[id] = nil }
+        scheduleSave()
+    }
+
+    func removeDraftAttachment(_ id: String, in sessionID: UUID) {
+        guard let i = index(of: sessionID) else { return }
+        sessions[i].pendingAttachments = sessions[i].draftAttachments.filter { $0.id != id }
+        uploadProgress[id] = nil
+        scheduleSave()
+    }
+
     // MARK: 发送
 
     @discardableResult
-    func send(text: String, in sessionID: UUID) -> Bool {
+    func send(text: String, attachments: [FileAttachment] = [], in sessionID: UUID) -> Bool {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, let i = index(of: sessionID), !isStreaming(sessionID) else { return false }
+        let files = attachments.filter { $0.fileID != nil }
+        guard !trimmed.isEmpty || !files.isEmpty,
+              let i = index(of: sessionID), !isStreaming(sessionID) else { return false }
         guard let client = settings.client else {
             lastError = "接口地址无效"
             return false
         }
 
+        var blocks: [Block] = []
+        if !trimmed.isEmpty {
+            blocks.append(Block(id: "u0", kind: .text, text: trimmed))
+        }
+        for (index, file) in files.enumerated() {
+            blocks.append(Block(id: "f\(index)", kind: .file, attachment: file))
+        }
         let userMessage = ChatMessage(
             id: UUID().uuidString,
             role: .user,
-            blocks: [Block(id: "u0", kind: .text, text: trimmed)],
+            blocks: blocks,
             createdAt: .now,
             status: .complete
         )
@@ -208,6 +256,7 @@ final class ChatStore {
         )
         sessions[i].messages.append(placeholder)
         sessions[i].draft = ""
+        sessions[i].pendingAttachments = nil
 
         let request = buildRequest(session: sessions[i], generateTitle: isFirstExchange)
         startStream(client: client, request: request, sessionID: sessionID, messageID: assistantID)
