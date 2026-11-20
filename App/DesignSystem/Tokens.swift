@@ -160,33 +160,50 @@ public enum DS {
 
 // MARK: - Helpers
 
-/// 解析 hex（0xRRGGBB / 0xAARRGGBB）
-func dsColor(_ hex: UInt32, alpha: Double = 1) -> Color {
-    let a, r, g, b: Double
+/// hex → sRGB 分量（0...1）
+private func dsComponents(_ hex: UInt32, alpha: Double = 1) -> (Double, Double, Double, Double) {
     if hex > 0xFFFFFF {
-        a = Double((hex >> 24) & 0xFF) / 255
-        r = Double((hex >> 16) & 0xFF) / 255
-        g = Double((hex >> 8) & 0xFF) / 255
-        b = Double(hex & 0xFF) / 255
-    } else {
-        a = alpha
-        r = Double((hex >> 16) & 0xFF) / 255
-        g = Double((hex >> 8) & 0xFF) / 255
-        b = Double(hex & 0xFF) / 255
+        return (Double((hex >> 16) & 0xFF) / 255,
+                Double((hex >> 8) & 0xFF) / 255,
+                Double(hex & 0xFF) / 255,
+                Double((hex >> 24) & 0xFF) / 255)
     }
-    return Color(.sRGB, red: r, green: g, blue: b, opacity: a)
+    return (Double((hex >> 16) & 0xFF) / 255,
+            Double((hex >> 8) & 0xFF) / 255,
+            Double(hex & 0xFF) / 255,
+            alpha)
 }
 
-/// 深浅色各自解析
+/// 解析 hex（0xRRGGBB / 0xAARRGGBB）
+func dsColor(_ hex: UInt32, alpha: Double = 1) -> Color {
+    let c = dsComponents(hex, alpha: alpha)
+    return Color(.sRGB, red: c.0, green: c.1, blue: c.2, opacity: c.3)
+}
+
+#if canImport(UIKit)
+private func dsUIColor(_ hex: UInt32, alpha: Double = 1) -> UIColor {
+    let c = dsComponents(hex, alpha: alpha)
+    return UIColor(red: c.0, green: c.1, blue: c.2, alpha: c.3)
+}
+#elseif canImport(AppKit)
+private func dsNSColor(_ hex: UInt32, alpha: Double = 1) -> NSColor {
+    let c = dsComponents(hex, alpha: alpha)
+    return NSColor(srgbRed: c.0, green: c.1, blue: c.2, alpha: c.3)
+}
+#endif
+
+/// 深浅色各自解析。
+/// 注意：这里直接构造原生颜色对象再包成 Color，**不要**用 NSColor(Color) 往返转换，
+/// 否则动态色在部分绘制上下文中会解析成黑色（曾导致 1pt 分割线变黑）。
 func dyn(_ light: UInt32, _ dark: UInt32) -> Color {
     #if canImport(UIKit)
     return Color(uiColor: UIColor { trait in
-        trait.userInterfaceStyle == .dark ? UIColor(dsColor(dark)) : UIColor(dsColor(light))
+        trait.userInterfaceStyle == .dark ? dsUIColor(dark) : dsUIColor(light)
     })
     #elseif canImport(AppKit)
     return Color(nsColor: NSColor(name: nil) { appearance in
-        let isDark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-        return isDark ? NSColor(dsColor(dark)) : NSColor(dsColor(light))
+        appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            ? dsNSColor(dark) : dsNSColor(light)
     })
     #else
     return dsColor(light)
@@ -199,15 +216,14 @@ func dynAlpha(_ lightHex: UInt32, _ lightAlpha: Double,
     #if canImport(UIKit)
     return Color(uiColor: UIColor { trait in
         trait.userInterfaceStyle == .dark
-            ? UIColor(dsColor(darkHex, alpha: darkAlpha))
-            : UIColor(dsColor(lightHex, alpha: lightAlpha))
+            ? dsUIColor(darkHex, alpha: darkAlpha)
+            : dsUIColor(lightHex, alpha: lightAlpha)
     })
     #elseif canImport(AppKit)
     return Color(nsColor: NSColor(name: nil) { appearance in
-        let isDark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-        return isDark
-            ? NSColor(dsColor(darkHex, alpha: darkAlpha))
-            : NSColor(dsColor(lightHex, alpha: lightAlpha))
+        appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            ? dsNSColor(darkHex, alpha: darkAlpha)
+            : dsNSColor(lightHex, alpha: lightAlpha)
     })
     #else
     return dsColor(lightHex, alpha: lightAlpha)

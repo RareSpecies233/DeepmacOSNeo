@@ -1,0 +1,391 @@
+import Foundation
+import Observation
+import SwiftUI
+
+// MARK: - 会话模型（UI 层，持久化用 Codable JSON）
+
+struct ChatSession: Identifiable, Codable, Hashable {
+    var id: UUID = UUID()
+    var title: String = ""
+    var createdAt: Date = .now
+    var updatedAt: Date = .now
+    var pinned: Bool = false
+    var model: String = "deepseek-flash"
+    var thinking: Bool = true
+    var search: Bool = true
+    var draft: String = ""
+    var messages: [ChatMessage] = []
+
+    var displayTitle: String {
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? "新对话" : trimmed
+    }
+
+    var lastUserText: String {
+        messages.last(where: { $0.role == .user })?.plainText ?? ""
+    }
+}
+
+// MARK: - 流式上下文
+
+@MainActor
+final class StreamContext {
+    let sessionID: UUID
+    let messageID: String
+    var accumulator: StreamAccumulator
+    var task: Task<Void, Never>?
+    var startedAt: Date = .now
+    var titleFromServer: String?
+
+    init(sessionID: UUID, messageID: String, accumulator: StreamAccumulator) {
+        self.sessionID = sessionID
+        self.messageID = messageID
+        self.accumulator = accumulator
+    }
+}
+
+// MARK: - 会话存储
+
+@MainActor
+@Observable
+final class ChatStore {
+
+    static let shared = ChatStore()
+
+    private(set) var sessions: [ChatSession] = []
+    private(set) var activeID: UUID?
+    private(set) var streamingSessionIDs: Set<UUID> = []
+    private(set) var lastError: String?
+    private var streams: [UUID: StreamContext] = [:]
+
+    private let settings: AppSettings
+    private let storeURL: URL
+    private var saveTask: Task<Void, Never>?
+
+    init(settings: AppSettings = .shared) {
+        self.settings = settings
+        self.storeURL = Self.makeStoreURL()
+        load()
+        if activeID == nil { activeID = sessions.first?.id }
+    }
+
+    // MARK: 派生
+
+    var activeSession: ChatSession? {
+        guard let activeID else { return nil }
+        return sessions.first { $0.id == activeID }
+    }
+
+    var sortedSessions: [ChatSession] {
+        sessions.sorted { lhs, rhs in
+            if lhs.pinned != rhs.pinned { return lhs.pinned }
+            return lhs.updatedAt > rhs.updatedAt
+        }
+    }
+
+    func isStreaming(_ id: UUID) -> Bool { streamingSessionIDs.contains(id) }
+
+    func session(_ id: UUID) -> ChatSession? { sessions.first { $0.id == id } }
+
+    func index(of id: UUID) -> Int? { sessions.firstIndex { $0.id == id } }
+
+    // MARK: 会话操作
+
+    @discardableResult
+    func newSession(select: Bool = true) -> UUID {
+        let session = ChatSession(model: settings.model, thinking: settings.thinking, search: settings.search)
+        sessions.insert(session, at: 0)
+        if select { activeID = session.id }
+        scheduleSave()
+        return session.id
+    }
+
+    func select(_ id: UUID?) {
+        activeID = id
+    }
+
+    func delete(_ id: UUID) {
+        stopStreaming(for: id)
+        sessions.removeAll { $0.id == id }
+        if activeID == id { activeID = sessions.first?.id }
+        scheduleSave()
+    }
+
+    func deleteAll() {
+        for id in sessions.map(\.id) { stopStreaming(for: id) }
+        sessions.removeAll()
+        activeID = nil
+        scheduleSave()
+    }
+
+    func rename(_ id: UUID, to title: String) {
+        guard let i = index(of: id) else { return }
+        sessions[i].title = String(title.prefix(80))
+        sessions[i].updatedAt = .now
+        scheduleSave()
+    }
+
+    func togglePin(_ id: UUID) {
+        guard let i = index(of: id) else { return }
+        sessions[i].pinned.toggle()
+        scheduleSave()
+    }
+
+    func updateDraft(_ id: UUID, text: String) {
+        guard let i = index(of: id) else { return }
+        sessions[i].draft = text
+        scheduleSave(debounce: 0.8)
+    }
+
+    func setThinking(_ id: UUID, _ value: Bool) {
+        guard let i = index(of: id) else { return }
+        sessions[i].thinking = value
+        scheduleSave()
+    }
+
+    func setSearch(_ id: UUID, _ value: Bool) {
+        guard let i = index(of: id) else { return }
+        sessions[i].search = value
+        scheduleSave()
+    }
+
+    func setModel(_ id: UUID, _ model: String) {
+        guard let i = index(of: id) else { return }
+        sessions[i].model = model
+        scheduleSave()
+    }
+
+    // MARK: 发送
+
+    @discardableResult
+    func send(text: String, in sessionID: UUID) -> Bool {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, let i = index(of: sessionID), !isStreaming(sessionID) else { return false }
+        guard let client = settings.client else {
+            lastError = "接口地址无效"
+            return false
+        }
+
+        let userMessage = ChatMessage(
+            id: UUID().uuidString,
+            role: .user,
+            blocks: [Block(id: "u0", kind: .text, text: trimmed)],
+            createdAt: .now,
+            status: .complete
+        )
+        sessions[i].messages.append(userMessage)
+
+        let isFirstExchange = !sessions[i].messages.contains { $0.role == .assistant }
+        if sessions[i].title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            sessions[i].title = Self.autoTitle(from: trimmed)
+        }
+        sessions[i].updatedAt = .now
+
+        let assistantID = UUID().uuidString
+        let placeholder = ChatMessage(
+            id: assistantID,
+            role: .assistant,
+            blocks: [],
+            createdAt: .now,
+            status: .streaming,
+            model: sessions[i].model
+        )
+        sessions[i].messages.append(placeholder)
+        sessions[i].draft = ""
+
+        let request = buildRequest(session: sessions[i], generateTitle: isFirstExchange)
+        startStream(client: client, request: request, sessionID: sessionID, messageID: assistantID)
+        scheduleSave()
+        return true
+    }
+
+    /// 重新生成最后一条助手回复
+    func regenerate(sessionID: UUID) {
+        guard let i = index(of: sessionID), !isStreaming(sessionID) else { return }
+        // 移除末尾的 assistant 消息（若有）
+        while let last = sessions[i].messages.last, last.role == .assistant {
+            sessions[i].messages.removeLast()
+        }
+        guard let client = settings.client else {
+            lastError = "接口地址无效"
+            return
+        }
+        let assistantID = UUID().uuidString
+        sessions[i].messages.append(
+            ChatMessage(id: assistantID, role: .assistant, blocks: [], createdAt: .now,
+                        status: .streaming, model: sessions[i].model)
+        )
+        let request = buildRequest(session: sessions[i], generateTitle: false)
+        startStream(client: client, request: request, sessionID: sessionID, messageID: assistantID)
+    }
+
+    /// 继续生成被停止的回复
+    func continueReply(sessionID: UUID) {
+        guard let i = index(of: sessionID), !isStreaming(sessionID),
+              let last = sessions[i].messages.last, last.role == .assistant else { return }
+        guard let client = settings.client else { return }
+        let assistantID = UUID().uuidString
+        sessions[i].messages.append(
+            ChatMessage(id: assistantID, role: .assistant, blocks: [], createdAt: .now,
+                        status: .streaming, model: sessions[i].model)
+        )
+        let request = buildRequest(session: sessions[i], generateTitle: false)
+        startStream(client: client, request: request, sessionID: sessionID, messageID: assistantID)
+    }
+
+    func stop(sessionID: UUID) {
+        stopStreaming(for: sessionID)
+    }
+
+    // MARK: 流式实现
+
+    private func startStream(client: DeepSeekClient, request: ChatRequest,
+                             sessionID: UUID, messageID: String) {
+        let accumulator = StreamAccumulator(id: messageID, model: request.model, createdAt: .now)
+        let context = StreamContext(sessionID: sessionID, messageID: messageID, accumulator: accumulator)
+        streams[sessionID] = context
+        streamingSessionIDs.insert(sessionID)
+
+        context.task = Task { [weak self] in
+            let stream = client.stream(request)
+            do {
+                for try await event in stream {
+                    guard let self, !Task.isCancelled else { break }
+                    if self.streams[sessionID] === context {
+                        context.accumulator.apply(event)
+                        if case .messageDelta(_, let title) = event, let title, !title.isEmpty {
+                            context.titleFromServer = title
+                        }
+                        self.sync(context)
+                    }
+                }
+                guard let self, !Task.isCancelled else { return }
+                if self.streams[sessionID] === context {
+                    context.accumulator.finish(status: .complete)
+                    self.sync(context, finalize: true)
+                    self.applyServerTitle(context)
+                    self.finishStream(sessionID: sessionID)
+                }
+            } catch {
+                guard let self else { return }
+                let wasCancelled = Task.isCancelled || (error as? CancellationError) != nil
+                if self.streams[sessionID] === context {
+                    if wasCancelled {
+                        context.accumulator.finish(status: .stopped)
+                    } else {
+                        let message = (error as? DeepSeekError)?.errorDescription ?? error.localizedDescription
+                        context.accumulator.finish(status: .failed, error: message)
+                        self.lastError = message
+                    }
+                    self.sync(context, finalize: true)
+                    self.finishStream(sessionID: sessionID)
+                }
+            }
+        }
+    }
+
+    private func sync(_ context: StreamContext, finalize: Bool = false) {
+        guard let i = index(of: context.sessionID),
+              let mi = sessions[i].messages.firstIndex(where: { $0.id == context.messageID }) else { return }
+        sessions[i].messages[mi] = context.accumulator.message
+        if finalize { sessions[i].updatedAt = .now }
+    }
+
+    private func applyServerTitle(_ context: StreamContext) {
+        guard let title = context.titleFromServer?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !title.isEmpty, let i = index(of: context.sessionID) else { return }
+        sessions[i].title = String(title.prefix(80))
+        scheduleSave()
+    }
+
+    private func finishStream(sessionID: UUID) {
+        streams[sessionID]?.task = nil
+        streams[sessionID] = nil
+        streamingSessionIDs.remove(sessionID)
+        scheduleSave(debounce: 0.2)
+    }
+
+    private func stopStreaming(for sessionID: UUID) {
+        guard let context = streams[sessionID] else { return }
+        context.task?.cancel()
+        context.accumulator.finish(status: .stopped)
+        sync(context, finalize: true)
+        streams[sessionID] = nil
+        streamingSessionIDs.remove(sessionID)
+        scheduleSave()
+    }
+
+    // MARK: 请求构造
+
+    private func buildRequest(session: ChatSession, generateTitle: Bool) -> ChatRequest {
+        var history: [RequestMessage] = []
+        for message in session.messages {
+            if message.role == .assistant && message.status == .streaming && message.blocks.isEmpty {
+                continue // 跳过空占位
+            }
+            history.append(RequestMessage(role: message.role == .user ? .user : .assistant,
+                                          blocks: message.blocks))
+        }
+        return ChatRequest(
+            model: session.model,
+            system: Self.systemPrompt,
+            messages: history,
+            thinking: session.thinking,
+            search: session.search,
+            readURL: true,
+            titleGeneration: generateTitle
+        )
+    }
+
+    // MARK: 持久化
+
+    private static func makeStoreURL() -> URL {
+        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? URL.temporaryDirectory
+        let dir = base.appending(path: "DeepGlass", directoryHint: .isDirectory)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir.appending(path: "sessions.json")
+    }
+
+    private func load() {
+        guard let data = try? Data(contentsOf: storeURL) else { return }
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        if let payload = try? decoder.decode(StorePayload.self, from: data) {
+            sessions = payload.sessions
+            activeID = payload.activeID
+        }
+    }
+
+    func scheduleSave(debounce: Double = 0.4) {
+        saveTask?.cancel()
+        saveTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(debounce))
+            guard !Task.isCancelled else { return }
+            self?.saveNow()
+        }
+    }
+
+    func saveNow() {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.withoutEscapingSlashes]
+        let payload = StorePayload(sessions: sessions, activeID: activeID)
+        guard let data = try? encoder.encode(payload) else { return }
+        try? data.write(to: storeURL, options: .atomic)
+    }
+
+    private struct StorePayload: Codable {
+        var sessions: [ChatSession]
+        var activeID: UUID?
+    }
+
+    // MARK: 文案
+
+    private static func autoTitle(from text: String) -> String {
+        let cleaned = text.replacingOccurrences(of: "\n", with: " ")
+        return String(cleaned.prefix(24))
+    }
+
+    static let systemPrompt = DeepSeekDefaults.systemPrompt
+}

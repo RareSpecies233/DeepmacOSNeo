@@ -1,0 +1,101 @@
+# DeepGlass
+
+用 **SwiftUI + Liquid Glass** 复刻的 DeepSeek Chat 客户端，一套源码运行在 **macOS / iPadOS / iOS**。
+
+视觉与交互基准是官方开源示例 [deepseek-ai/chat-demo](https://github.com/deepseek-ai/chat-demo)（MIT）。
+方案与决策记录见 [PLAN.md](PLAN.md)，与原版的差异审计见 [docs/DEVIATIONS.md](docs/DEVIATIONS.md)。
+
+| macOS（浅色） | macOS（深色） |
+|---|---|
+| ![macOS 浅色](docs/screenshots/macos-light.png) | ![macOS 深色](docs/screenshots/macos-dark.png) |
+
+| iPhone | iPad |
+|---|---|
+| ![iPhone](docs/screenshots/iphone.png) | ![iPad](docs/screenshots/ipad.png) |
+
+![设置](docs/screenshots/macos-settings.png)
+![真实 API 对话](docs/screenshots/macos-real-api.png)
+
+---
+
+## 已实现（P0）
+
+**对话**
+- 真实 DeepSeek API 直连（Anthropic 兼容 `POST /anthropic/v1/messages`，SSE 流式）
+- 停止生成 / 继续生成 / 重新生成；发送即插入乐观占位
+- 思考过程时间线：可折叠、思考中/已停止/有正文三态标题、搜索与读链接步骤、来源标题
+- 自动标题（读服务端 `message_delta.title`，失败时按首句兜底）
+
+**渲染**
+- 自研 Markdown 渲染器：标题、段落、粗斜体/删除线、行内代码、链接、图片、有序/无序/任务列表、引用、表格、分割线
+- 代码块：语言标签、复制、横向滚动、轻量语法着色（swift/ts/js/python/json/bash/html/css/sql…）
+- 公式（`$…$` / `$$…$$`）与 Mermaid：本地 KaTeX / mermaid 的 WKWebView 岛，失败降级为等宽源码
+
+**外壳（Liquid Glass）**
+- macOS 使用原生侧栏材质（`NSVisualEffectView(.sidebar)`）+ 透明窗口，玻璃可采样后方内容
+- 输入框、设置弹窗、浮动按钮使用原生 `glassEffect`
+- 减弱透明度时降级 `.ultraThinMaterial`，减弱动效时禁用 morph
+
+**其它**
+- 会话：新建 / 重命名 / 删除 / 置顶 / 按「今天·昨天·7 天内·30 天内·按月」分组 / 搜索词高亮
+- 设置：API Key（Keychain + `GET /models` 校验三态）、接口地址（可切本地 Mock）、模型选择、深度思考 / 智能搜索开关、主题三态
+- 持久化：自动保存会话与草稿；API Key 只进 Keychain
+- 三端适配：macOS 隐藏标题栏 + 菜单命令；iPad 分栏；iPhone 抽屉 + 吸底输入框
+
+## 运行
+
+```bash
+brew install xcodegen
+./scripts/gen.sh
+
+# macOS
+xcodebuild -project DeepGlass.xcodeproj -scheme DeepGlass-macOS \
+  -destination 'platform=macOS' -derivedDataPath build/dd build
+
+# iPhone / iPad 模拟器（会自动装并启动）
+./scripts/screenshot-ios.sh "iPhone 18 Pro" iphone
+./scripts/screenshot-ios.sh "iPad Pro 13-inch (M5)" ipad
+```
+
+首次启动在「设置」填入 DeepSeek API Key，接口地址保持 `https://api.deepseek.com`。
+
+### 没有 Key 也能跑
+
+```bash
+python3 scripts/mock-server.py       # 127.0.0.1:8787，输出带思考/搜索/引用的完整 SSE
+```
+
+设置里点「使用本地 Mock」，Key 随便填。或直接用演示参数启动：
+
+```bash
+DEEPSEEK_API_KEY=sk-xxx open -n build/dd/Build/Products/Debug/DeepGlass.app --args --demo
+# 可选：--dark  --settings  --origin=http://127.0.0.1:8787  --prompt="..."
+```
+
+## 结构
+
+```
+App/
+  DesignSystem/     令牌（取自原版 theme.css）、玻璃原语、原子组件、侧栏材质
+  Features/
+    Sider/          会话侧栏（分组、重命名、置顶、删除）
+    Chat/           消息列表、思考时间线、消息行、欢迎页
+    Composer/       输入框（玻璃、开关、发送/停止）
+    Markdown/       解析器 + 原生渲染 + 公式/图表 Web 岛
+    Settings/       设置面板（玻璃 sheet）
+  Services/         会话存储、设置、Keychain、窗口配置、演示模式
+Core/               DeepSeekKit：协议 / SSE / 累加器（92 个单元测试）
+Reference/chat-demo 原版源码（只读对照）
+scripts/            工程生成、构建、截图、mock 服务
+```
+
+## 测试
+
+```bash
+swift test --package-path Core
+# Executed 92 tests, with 1 test skipped and 0 failures
+```
+
+## 已知未实现
+
+附件上传、语音输入、朗读、消息分支切换、中英文切换。详见 [docs/DEVIATIONS.md](docs/DEVIATIONS.md) 与 [PLAN.md](PLAN.md) 的 P1/P2 清单。

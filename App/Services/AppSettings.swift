@@ -95,7 +95,13 @@ final class AppSettings {
         self.search = defaults.object(forKey: Key.search) as? Bool ?? true
         self.theme = ThemePreference(rawValue: defaults.string(forKey: Key.theme) ?? "") ?? .system
         self.sidebarCollapsed = defaults.object(forKey: Key.sidebarCollapsed) as? Bool ?? false
-        self.apiKey = KeychainStore.read() ?? ""
+        // 开发/测试便捷路径：DEEPSEEK_API_KEY 环境变量优先于 Keychain，
+        // 仅用于本地联调，发布构建请依赖 Keychain。
+        if let envKey = ProcessInfo.processInfo.environment["DEEPSEEK_API_KEY"], !envKey.isEmpty {
+            self.apiKey = envKey
+        } else {
+            self.apiKey = KeychainStore.read() ?? ""
+        }
     }
 
     // MARK: Key 管理
