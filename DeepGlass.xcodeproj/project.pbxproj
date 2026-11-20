@@ -1,0 +1,436 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		2DE5CE9B70205538C9059B9C /* Placeholder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39D0C3F61D7C1708C6969C8 /* Placeholder.swift */; };
+		3FF4C56BB02FECCAC40B1D94 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F47C0B973D2478024F18B2A4 /* RootView.swift */; };
+		43C54C5B352FAAED122B3594 /* DeepGlassApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67D9E37712A8708633796AA8 /* DeepGlassApp.swift */; };
+		5EF8F87E9024253AB27456F0 /* Tokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF16014AA5A730D3E4A4359A /* Tokens.swift */; };
+		C3011BCF2AFEF5A04B359C88 /* Placeholder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39D0C3F61D7C1708C6969C8 /* Placeholder.swift */; };
+		C38E6DC90DA31413FDEAAAEE /* Tokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF16014AA5A730D3E4A4359A /* Tokens.swift */; };
+		D2E1413DF80AAA38EE549B26 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F47C0B973D2478024F18B2A4 /* RootView.swift */; };
+		E74E59FF87D710E4D1D79498 /* DeepGlassApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67D9E37712A8708633796AA8 /* DeepGlassApp.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		59C6751E622B6F3800838F3F /* DeepGlass-macOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "DeepGlass-macOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		67D9E37712A8708633796AA8 /* DeepGlassApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepGlassApp.swift; sourceTree = "<group>"; };
+		A36FCE5BF2A2B20BCF307D07 /* DeepGlass-iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "DeepGlass-iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		BF16014AA5A730D3E4A4359A /* Tokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tokens.swift; sourceTree = "<group>"; };
+		D39D0C3F61D7C1708C6969C8 /* Placeholder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Placeholder.swift; sourceTree = "<group>"; };
+		F47C0B973D2478024F18B2A4 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		0B1DC76D8D41E5672A7CEFF0 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				C209E86DEBE8E75D425CCF17 /* Sources */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		0FDD75119FDAC295C5406042 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A36FCE5BF2A2B20BCF307D07 /* DeepGlass-iOS.app */,
+				59C6751E622B6F3800838F3F /* DeepGlass-macOS.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		927CB1A171187156F46A5446 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		9F3FF6A88A9E226CEECE6DC1 = {
+			isa = PBXGroup;
+			children = (
+				E3B34381B428AB93E07B32D8 /* App */,
+				0B1DC76D8D41E5672A7CEFF0 /* Core */,
+				0FDD75119FDAC295C5406042 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		AEBE55178ED0B4E33B22AEAD /* DesignSystem */ = {
+			isa = PBXGroup;
+			children = (
+				BF16014AA5A730D3E4A4359A /* Tokens.swift */,
+			);
+			path = DesignSystem;
+			sourceTree = "<group>";
+		};
+		C209E86DEBE8E75D425CCF17 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				DC5973560C5B6D6F8D589BB9 /* DeepSeekKit */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		DC5973560C5B6D6F8D589BB9 /* DeepSeekKit */ = {
+			isa = PBXGroup;
+			children = (
+				D39D0C3F61D7C1708C6969C8 /* Placeholder.swift */,
+			);
+			path = DeepSeekKit;
+			sourceTree = "<group>";
+		};
+		E3B34381B428AB93E07B32D8 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				AEBE55178ED0B4E33B22AEAD /* DesignSystem */,
+				927CB1A171187156F46A5446 /* Features */,
+				67D9E37712A8708633796AA8 /* DeepGlassApp.swift */,
+				F47C0B973D2478024F18B2A4 /* RootView.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A66CC092AB03EA3FCF7F8168 /* DeepGlass-macOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8E05B2C95C7224F51287C29C /* Build configuration list for PBXNativeTarget "DeepGlass-macOS" */;
+			buildPhases = (
+				2CA1CFA3D9BF7DE18CBE764E /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "DeepGlass-macOS";
+			packageProductDependencies = (
+			);
+			productName = "DeepGlass-macOS";
+			productReference = 59C6751E622B6F3800838F3F /* DeepGlass-macOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+		CC68E191C9DAC6BA87E1AD46 /* DeepGlass-iOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8D7F8C8B0C420817EEB5A331 /* Build configuration list for PBXNativeTarget "DeepGlass-iOS" */;
+			buildPhases = (
+				80C9FD9B52F598AA4D9403A3 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "DeepGlass-iOS";
+			packageProductDependencies = (
+			);
+			productName = "DeepGlass-iOS";
+			productReference = A36FCE5BF2A2B20BCF307D07 /* DeepGlass-iOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		B8142A58F6711418D1A13356 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = FCC7968940B10849ED39357F /* Build configuration list for PBXProject "DeepGlass" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 9F3FF6A88A9E226CEECE6DC1;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 0FDD75119FDAC295C5406042 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A66CC092AB03EA3FCF7F8168 /* DeepGlass-macOS */,
+				CC68E191C9DAC6BA87E1AD46 /* DeepGlass-iOS */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		2CA1CFA3D9BF7DE18CBE764E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E74E59FF87D710E4D1D79498 /* DeepGlassApp.swift in Sources */,
+				2DE5CE9B70205538C9059B9C /* Placeholder.swift in Sources */,
+				D2E1413DF80AAA38EE549B26 /* RootView.swift in Sources */,
+				5EF8F87E9024253AB27456F0 /* Tokens.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		80C9FD9B52F598AA4D9403A3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				43C54C5B352FAAED122B3594 /* DeepGlassApp.swift in Sources */,
+				C3011BCF2AFEF5A04B359C88 /* Placeholder.swift in Sources */,
+				3FF4C56BB02FECCAC40B1D94 /* RootView.swift in Sources */,
+				C38E6DC90DA31413FDEAAAEE /* Tokens.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		05AF84CDE4486CAF383B05F1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.deepglass.app;
+				PRODUCT_NAME = DeepGlass;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		101D7AD9CA63032721335379 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_HARDENED_RUNTIME = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.deepglass.app;
+				PRODUCT_NAME = DeepGlass;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		4BFD98D5EDA912713A0E97FA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		4C0D1DFAB2AA9EC03DFE624A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_HARDENED_RUNTIME = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.deepglass.app;
+				PRODUCT_NAME = DeepGlass;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		4E95C38977974B6E678D1029 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.deepglass.app;
+				PRODUCT_NAME = DeepGlass;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		62C2BD76D9BEAF81E372FF77 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		8D7F8C8B0C420817EEB5A331 /* Build configuration list for PBXNativeTarget "DeepGlass-iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				05AF84CDE4486CAF383B05F1 /* Debug */,
+				4E95C38977974B6E678D1029 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8E05B2C95C7224F51287C29C /* Build configuration list for PBXNativeTarget "DeepGlass-macOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4C0D1DFAB2AA9EC03DFE624A /* Debug */,
+				101D7AD9CA63032721335379 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		FCC7968940B10849ED39357F /* Build configuration list for PBXProject "DeepGlass" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4BFD98D5EDA912713A0E97FA /* Debug */,
+				62C2BD76D9BEAF81E372FF77 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = B8142A58F6711418D1A13356 /* Project object */;
+}

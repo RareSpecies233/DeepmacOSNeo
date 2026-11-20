@@ -1,0 +1,7 @@
+build/
+DerivedData/
+*.xcworkspace
+xcuserdata/
+.DS_Store
+.screenshots/
+*.png.tmp
