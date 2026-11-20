@@ -42,19 +42,66 @@
 - 持久化：自动保存会话与草稿；API Key 只进 Keychain
 - 三端适配：macOS 隐藏标题栏 + 菜单命令；iPad 分栏；iPhone 抽屉 + 吸底输入框
 
-## 运行
+## 构建成 App
+
+### 方式一：Xcode 里点运行（推荐）
 
 ```bash
 brew install xcodegen
 ./scripts/gen.sh
+open DeepGlass.xcodeproj
+```
 
-# macOS
+选择 `DeepGlass-macOS` scheme → ⌘R。产物在
+`~/Library/Developer/Xcode/DerivedData/DeepGlass-*/Build/Products/Debug/DeepGlass.app`，
+可以直接拖进「应用程序」文件夹。
+
+iOS：切到 `DeepGlass-iOS` scheme，选模拟器直接 ⌘R。
+
+### 方式二：命令行出可分发的 .app / zip
+
+```bash
+./scripts/package.sh
+```
+
+产出：
+
+```
+dist/DeepGlass.app            可直接双击运行（ad-hoc 签名）
+dist/DeepGlass-0.1.0.zip      发给别人的压缩包
+```
+
+拷到本机其他位置或别的 Mac 时，若被 Gatekeeper 拦下，右键 → 打开，
+或 `xattr -dr com.apple.quarantine /Applications/DeepGlass.app`。
+
+### 真机 / 对外分发（需要开发者账号）
+
+**iOS 真机**：`project.yml` 里给 `DeepGlass-iOS` 加两行后重新 `./scripts/gen.sh`，
+或在 Xcode 的 Signing & Capabilities 里选 Team：
+
+```yaml
+    settings:
+      base:
+        DEVELOPMENT_TEAM: ABCDE12345
+        CODE_SIGNING_ALLOWED: YES
+```
+
+**macOS 对外分发**：需要用 Developer ID 证书签名并通过公证，否则别人打开会提示无法验证开发者。
+
+```bash
+codesign --force --deep --options runtime \
+  --sign "Developer ID Application: 你的名字 (TEAMID)" dist/DeepGlass.app
+xcrun notarytool submit dist/DeepGlass-0.1.0.zip \
+  --apple-id you@example.com --team-id TEAMID --password 应用专用密码 --wait
+xcrun stapler staple dist/DeepGlass.app
+```
+
+默认只构建 arm64。要出 Intel 也能跑的通用二进制：
+
+```bash
 xcodebuild -project DeepGlass.xcodeproj -scheme DeepGlass-macOS \
-  -destination 'platform=macOS' -derivedDataPath build/dd build
-
-# iPhone / iPad 模拟器（会自动装并启动）
-./scripts/screenshot-ios.sh "iPhone 18 Pro" iphone
-./scripts/screenshot-ios.sh "iPad Pro 13-inch (M5)" ipad
+  -configuration Release -destination 'platform=macOS' \
+  ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO build
 ```
 
 首次启动在「设置」填入 DeepSeek API Key，接口地址保持 `https://api.deepseek.com`。

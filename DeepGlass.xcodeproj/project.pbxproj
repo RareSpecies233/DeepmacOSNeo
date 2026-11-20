@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		06BF130C17DEB18CDC8B4B37 /* KaTeX_Fraktur-Regular.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 2D2B211AFB272E0482700CC5 /* KaTeX_Fraktur-Regular.woff2 */; };
+		0B62D536D31080530AEABCAD /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = D1DC22284ED749746D6B7FF6 /* AppIcon.icns */; };
 		0C401A5F3CE70B74B69E67FA /* KaTeX_Main-Italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 284C3CBFF9EBDD3895F7B994 /* KaTeX_Main-Italic.woff2 */; };
 		0CD24BC83A0D88539A0474D3 /* MathSnapshotRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6224EC2525469FD7A94FB32C /* MathSnapshotRenderer.swift */; };
 		0D61272B27CF7FC4E9BFC260 /* DemoMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8C29B65052E676FEAA9D89F /* DemoMode.swift */; };
@@ -55,6 +56,7 @@
 		4D3CC4906AEFFBF6EDC453AD /* KaTeX_Math-Italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = B370D9C84AF4F92ADDE92A4B /* KaTeX_Math-Italic.woff2 */; };
 		54AE103303E52C6387CC5C60 /* KaTeX_Script-Regular.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 9FED87E8E21A9EC0D6BCD287 /* KaTeX_Script-Regular.woff2 */; };
 		569CFE2030159DB12E1270A6 /* MarkdownModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BD689D87F12960ACBF39231 /* MarkdownModel.swift */; };
+		59EF9FBA204BA68C2D476201 /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = D1DC22284ED749746D6B7FF6 /* AppIcon.icns */; };
 		5A22C48A3119FB5B9C358279 /* Glass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36CC9A7C32E3FEE17CEA03FF /* Glass.swift */; };
 		5AFA4D855F0CBCBE6E85A5A9 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 48C95D80359E6A43923C1838 /* README.md */; };
 		5D22F69CF4999495ED3B3B82 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36C4149E090299B763D24B0 /* WelcomeView.swift */; };
@@ -240,6 +242,7 @@
 		CCFB914ACAE5AAE3D56F4EED /* ChatStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatStore.swift; sourceTree = "<group>"; };
 		CDC850A2E5E521BE145ED7EC /* Domain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Domain.swift; sourceTree = "<group>"; };
 		CE6BDF11E8D916CAD8119E14 /* LICENSE */ = {isa = PBXFileReference; path = LICENSE; sourceTree = "<group>"; };
+		D1DC22284ED749746D6B7FF6 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
 		D39D0C3F61D7C1708C6969C8 /* Placeholder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Placeholder.swift; sourceTree = "<group>"; };
 		D3EAC118D70703D1249FC67A /* MermaidBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MermaidBlockView.swift; sourceTree = "<group>"; };
 		D61D4A881BB5478672D55242 /* KaTeX_Caligraphic-Regular.woff2 */ = {isa = PBXFileReference; path = "KaTeX_Caligraphic-Regular.woff2"; sourceTree = "<group>"; };
@@ -451,6 +454,14 @@
 			path = Chat;
 			sourceTree = "<group>";
 		};
+		DA52D3CA5972334AB555BBC9 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				D1DC22284ED749746D6B7FF6 /* AppIcon.icns */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 		DC5973560C5B6D6F8D589BB9 /* DeepSeekKit */ = {
 			isa = PBXGroup;
 			children = (
@@ -474,6 +485,7 @@
 			children = (
 				AEBE55178ED0B4E33B22AEAD /* DesignSystem */,
 				927CB1A171187156F46A5446 /* Features */,
+				DA52D3CA5972334AB555BBC9 /* Resources */,
 				E669A66ECB7F218BE385DF03 /* Services */,
 				67D9E37712A8708633796AA8 /* DeepGlassApp.swift */,
 				F47C0B973D2478024F18B2A4 /* RootView.swift */,
@@ -582,6 +594,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				59EF9FBA204BA68C2D476201 /* AppIcon.icns in Resources */,
 				33435FC865C44A60E4C7E730 /* KaTeX_AMS-Regular.woff2 in Resources */,
 				BB3905463641FEA3EE71E5E2 /* KaTeX_Caligraphic-Bold.woff2 in Resources */,
 				2448FEEEFD51C0294C9FCE4A /* KaTeX_Caligraphic-Regular.woff2 in Resources */,
@@ -613,6 +626,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0B62D536D31080530AEABCAD /* AppIcon.icns in Resources */,
 				C77BE7F33674A93B05EE1C3E /* KaTeX_AMS-Regular.woff2 in Resources */,
 				F7EECEFEBDC0D8A02524E9A9 /* KaTeX_Caligraphic-Bold.woff2 in Resources */,
 				9552966165E6FC9165AEC49B /* KaTeX_Caligraphic-Regular.woff2 in Resources */,
@@ -782,6 +796,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = "";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleIconFile = AppIcon;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -804,6 +819,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				ENABLE_HARDENED_RUNTIME = NO;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleIconFile = AppIcon;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -892,6 +908,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				ENABLE_HARDENED_RUNTIME = NO;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleIconFile = AppIcon;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -909,6 +926,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = "";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleIconFile = AppIcon;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
