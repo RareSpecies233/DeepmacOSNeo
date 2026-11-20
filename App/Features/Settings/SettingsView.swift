@@ -8,17 +8,19 @@ enum SettingsGroup: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    @MainActor
     var title: String {
         switch self {
-        case .general: "通用"
-        case .data: "数据"
+        case .general: L10n.t(.settingsGroupGeneral)
+        case .data: L10n.t(.settingsGroupData)
         }
     }
 
+    @MainActor
     var accessibilityTitle: String {
         switch self {
-        case .general: "通用设置"
-        case .data: "数据管理"
+        case .general: L10n.t(.settingDialogAsideGeneralOptionLabel)
+        case .data: L10n.t(.settingDialogAsideDataOptionLabel)
         }
     }
 
@@ -115,7 +117,7 @@ struct SettingsView: View {
 
     private func header(topPadding: CGFloat) -> some View {
         HStack(spacing: 12) {
-            Text("设置")
+            Text(L10n.t(.settings))
                 .font(DS.Typography.title)
                 .foregroundStyle(DS.Colors.labelPrimary)
 

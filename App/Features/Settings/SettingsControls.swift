@@ -194,7 +194,7 @@ struct SettingsCloseButton: View {
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
-        .accessibilityLabel("关闭设置")
+        .accessibilityLabel(L10n.t(.closeSettings))
         .settingsCancelKeyEquivalent()
     }
 }

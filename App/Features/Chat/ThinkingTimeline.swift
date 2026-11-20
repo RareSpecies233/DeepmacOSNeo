@@ -61,10 +61,10 @@ struct ThinkingTimeline: View {
     }
 
     private var title: String {
-        if hasResponse { return "已思考" }
-        if !isStreaming { return "已停止" }
-        if toolBlocks.contains(where: { $0.kind == .searchResults }) { return "正在搜索" }
-        return "正在思考"
+        if hasResponse { return L10n.t(.thinkingDone) }
+        if !isStreaming { return L10n.t(.messageThinkStopped) }
+        if toolBlocks.contains(where: { $0.kind == .searchResults }) { return L10n.t(.deepSearchSearching) }
+        return L10n.t(.messageThinking)
     }
 }
 
@@ -93,7 +93,7 @@ private struct ToolStepRow: View {
                     Image(systemName: block.failed ? "exclamationmark.triangle" : "doc.text.magnifyingglass")
                         .font(.system(size: 12))
                         .foregroundStyle(block.failed ? DS.Colors.errorSecondary : DS.Colors.labelTertiary)
-                    Text(block.failed ? "搜索失败" : "已阅读 \(block.searchResults.count) 个网页")
+                    Text(searchSummary)
                         .font(.system(size: 13))
                         .foregroundStyle(DS.Colors.labelSecondary)
                 }
@@ -117,7 +117,7 @@ private struct ToolStepRow: View {
                     Image(systemName: "doc.richtext")
                         .font(.system(size: 12))
                         .foregroundStyle(DS.Colors.labelTertiary)
-                    Text(block.failed ? "阅读失败" : (fetch.title ?? fetch.url))
+                    Text(block.failed ? L10n.t(.readFailed) : (fetch.title ?? fetch.url))
                         .font(.system(size: 13))
                         .foregroundStyle(DS.Colors.labelSecondary)
                         .lineLimit(1)
@@ -128,16 +128,27 @@ private struct ToolStepRow: View {
         }
     }
 
+    /// 搜索结果条数：1 条用单数文案，其余按 `{count}` 插值
+    private var searchSummary: String {
+        if block.failed { return L10n.t(.searchFailed) }
+        let count = block.searchResults.count
+        return count == 1
+            ? L10n.t(.messageSearchResult)
+            : L10n.t(.messageSearchResults, ["count": "\(count)"])
+    }
+
     private func label(for tool: ServerToolUse) -> String {
         switch tool.action {
         case "search":
-            return tool.queries.isEmpty ? "正在搜索" : "搜索「\(tool.queries.joined(separator: "、"))」"
+            return tool.queries.isEmpty
+                ? L10n.t(.deepSearchSearching)
+                : L10n.t(.searchQuery, ["query": L10n.list(tool.queries)])
         case "open_page", "read_link":
-            return "阅读 \(tool.url ?? "网页")"
+            return L10n.t(.readingURL, ["url": tool.url ?? L10n.t(.webPage)])
         case "find_in_page":
-            return "在页面中查找「\(tool.pattern ?? "")」"
+            return L10n.t(.findInPage, ["pattern": tool.pattern ?? ""])
         default:
-            return "调用工具"
+            return L10n.t(.toolCall)
         }
     }
 }

@@ -4,7 +4,10 @@ import SwiftUI
 //
 // 字段顺序对齐 Reference/chat-demo/src/components/settings/SettingsDialog.tsx：
 // 主题 → 语言 → …；DeepGlass 按组件需求改为 API Key → 接口地址 → 模型 →
-// 深度思考 → 智能搜索 → 主题，连接信息在前、外观偏好在后。
+// 深度思考 → 智能搜索 → 主题 → 语言，连接信息在前、外观偏好在后。
+//
+// 文案统一走 L10n：L10n.t 读取 AppSettings.shared.language，切换语言后随
+// SwiftUI 观察一起刷新，无需重启。
 
 struct SettingsGeneralView: View {
     let settings: AppSettings
@@ -30,8 +33,8 @@ struct SettingsGeneralView: View {
             SettingsHairline()
 
             SettingsToggleRow(
-                title: "深度思考",
-                subtitle: "先思考后回答，解决推理问题",
+                title: L10n.t(.thinkingSwitch),
+                subtitle: L10n.t(.deactivatedThinkTooltip),
                 isOn: $bindable.thinking
             )
             .padding(.vertical, 16)
@@ -39,16 +42,16 @@ struct SettingsGeneralView: View {
             SettingsHairline()
 
             SettingsToggleRow(
-                title: "智能搜索",
-                subtitle: "按需搜索网页",
+                title: L10n.t(.search),
+                subtitle: L10n.t(.deactivatedSearchTooltip),
                 isOn: $bindable.search
             )
 
             SettingsHairline()
 
             SettingsToggleRow(
-                title: "显示账户余额",
-                subtitle: "在侧栏底部显示当前账户余额（读取 /user/balance）",
+                title: L10n.t(.showBalance),
+                subtitle: L10n.t(.showBalanceSubtitle),
                 isOn: $bindable.showsBalance
             )
             .padding(.vertical, 16)
@@ -56,6 +59,11 @@ struct SettingsGeneralView: View {
             SettingsHairline()
 
             SettingsThemeRow(theme: $bindable.theme)
+                .padding(.vertical, 16)
+
+            SettingsHairline()
+
+            SettingsLanguageRow(language: $bindable.language)
                 .padding(.vertical, 16)
         }
     }
@@ -76,8 +84,8 @@ struct SettingsOriginRow: View {
 
         VStack(alignment: .leading, spacing: 10) {
             SettingsRowHeader(
-                title: "接口地址",
-                subtitle: "默认 https://api.deepseek.com，可指向自建服务或本地 Mock"
+                title: L10n.t(.apiOriginTitle),
+                subtitle: L10n.t(.apiOriginSubtitle)
             )
 
             HStack(spacing: 8) {
@@ -100,7 +108,7 @@ struct SettingsOriginRow: View {
                             RoundedRectangle(cornerRadius: 6, style: .continuous)
                                 .fill(DS.Colors.brandSubtle)
                         }
-                        .accessibilityLabel("当前使用本地 Mock 服务")
+                        .accessibilityLabel(L10n.t(.usingMockService))
                 }
             }
 
@@ -110,7 +118,7 @@ struct SettingsOriginRow: View {
                 HStack(spacing: 5) {
                     Image(systemName: "bolt.horizontal.circle")
                         .font(.system(size: 11, weight: .semibold))
-                    Text("使用本地 Mock（http://127.0.0.1:8787）")
+                    Text(L10n.t(.useLocalMock))
                         .font(DS.Typography.caption)
                 }
                 .foregroundStyle(DS.Colors.brandText)
@@ -118,7 +126,7 @@ struct SettingsOriginRow: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("使用本地 Mock 接口地址")
+            .accessibilityLabel(L10n.t(.useLocalMockAccessibility))
         }
     }
 }
@@ -132,12 +140,16 @@ struct SettingsModelRow: View {
         @Bindable var bindable = settings
 
         VStack(alignment: .leading, spacing: 10) {
-            SettingsRowHeader(title: "模型", subtitle: "选择对话使用的 DeepSeek 模型")
+            SettingsRowHeader(
+                title: L10n.t(.modelRowTitle),
+                subtitle: L10n.t(.modelRowSubtitle)
+            )
 
             HStack(spacing: 10) {
                 ForEach(ModelOption.all) { option in
                     SettingsModelCard(
                         option: option,
+                        blurb: SettingsModelRow.blurb(for: option),
                         isSelected: settings.model == option.id
                     ) {
                         bindable.model = option.id
@@ -146,10 +158,21 @@ struct SettingsModelRow: View {
             }
         }
     }
+
+    /// 模型简介来自 AppSettings 的 `ModelOption.blurb`，按 id 取对应译文；
+    /// 新增模型没配文案时回退到 `blurb` 原文。
+    static func blurb(for option: ModelOption) -> String {
+        switch option.id {
+        case "deepseek-flash": L10n.t(.modelFlashBlurb)
+        case "deepseek-v4-pro": L10n.t(.modelProBlurb)
+        default: option.blurb
+        }
+    }
 }
 
 struct SettingsModelCard: View {
     let option: ModelOption
+    let blurb: String
     let isSelected: Bool
     let action: () -> Void
 
@@ -172,7 +195,7 @@ struct SettingsModelCard: View {
                         .foregroundStyle(isSelected ? DS.Colors.brandPrimary : DS.Colors.labelCaption)
                 }
 
-                Text(option.blurb)
+                Text(blurb)
                     .font(DS.Typography.caption)
                     .foregroundStyle(DS.Colors.labelTertiary)
                     .multilineTextAlignment(.leading)
@@ -214,15 +237,53 @@ struct SettingsThemeRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             SettingsRowHeader(
-                title: "主题",
-                subtitle: "选择浅色、深色，或跟随系统外观自动切换"
+                title: L10n.t(.avatarMenuSettingsDialogThemeItemLabel),
+                subtitle: L10n.t(.themeSubtitle)
             )
 
             SettingsSegmentedControl(
                 values: ThemePreference.allCases,
                 selection: $theme,
-                label: { $0.label }
+                label: { Self.label(for: $0) }
             )
+        }
+    }
+
+    /// `ThemePreference.label` 是 AppSettings 里的固定中文，语言层在这里按 case 取译文。
+    static func label(for theme: ThemePreference) -> String {
+        switch theme {
+        case .light: L10n.t(.avatarMenuSettingsDialogThemeSelectLightOption)
+        case .dark: L10n.t(.avatarMenuSettingsDialogThemeSelectDarkOption)
+        case .system: L10n.t(.avatarMenuSettingsDialogThemeSelectSystemOption)
+        }
+    }
+}
+
+// MARK: - 语言
+
+struct SettingsLanguageRow: View {
+    @Binding var language: AppLanguage
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SettingsRowHeader(
+                title: L10n.t(.settingsLocalePreference),
+                subtitle: L10n.t(.languageSubtitle)
+            )
+
+            SettingsSegmentedControl(
+                values: AppLanguage.allCases,
+                selection: $language,
+                label: { Self.label(for: $0) }
+            )
+        }
+    }
+
+    /// 语言名按当前界面语言显示（照抄原版 settingsLocaleZhCN / settingsLocaleEnUS）
+    static func label(for language: AppLanguage) -> String {
+        switch language {
+        case .zhHans: L10n.t(.settingsLocaleZhCN)
+        case .enUS: L10n.t(.settingsLocaleEnUS)
         }
     }
 }

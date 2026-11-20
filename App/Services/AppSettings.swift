@@ -52,6 +52,7 @@ final class AppSettings {
         static let thinking = "ds.thinking"
         static let search = "ds.search"
         static let theme = "ds.theme"
+        static let language = "ds.language"
         static let sidebarCollapsed = "ds.sidebarCollapsed"
         static let showsBalance = "ds.showsBalance"
         static let hasOnboarded = "ds.hasOnboarded"
@@ -71,6 +72,10 @@ final class AppSettings {
     }
     var theme: ThemePreference {
         didSet { UserDefaults.standard.set(theme.rawValue, forKey: Key.theme) }
+    }
+    /// 界面语言。唯一真源：`L10n` 从这里读取并驱动全局刷新。
+    var language: AppLanguage {
+        didSet { UserDefaults.standard.set(language.rawValue, forKey: Key.language) }
     }
     var sidebarCollapsed: Bool {
         didSet { UserDefaults.standard.set(sidebarCollapsed, forKey: Key.sidebarCollapsed) }
@@ -105,6 +110,7 @@ final class AppSettings {
         self.thinking = defaults.object(forKey: Key.thinking) as? Bool ?? true
         self.search = defaults.object(forKey: Key.search) as? Bool ?? true
         self.theme = ThemePreference(rawValue: defaults.string(forKey: Key.theme) ?? "") ?? .system
+        self.language = AppLanguage(rawValue: defaults.string(forKey: Key.language) ?? "") ?? .zhHans
         self.sidebarCollapsed = defaults.object(forKey: Key.sidebarCollapsed) as? Bool ?? false
         self.showsBalance = defaults.object(forKey: Key.showsBalance) as? Bool ?? true
         // 开发/测试便捷路径：DEEPSEEK_API_KEY 环境变量优先于 Keychain，

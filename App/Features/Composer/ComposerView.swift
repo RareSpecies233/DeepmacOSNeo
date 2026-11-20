@@ -7,7 +7,8 @@ struct ComposerView: View {
     @Binding var search: Bool
     var isStreaming: Bool
     var canSend: Bool
-    var placeholder: String = "请输入消息"
+    /// nil 表示按当前语言取 `chatInputPlaceholderChat`
+    var placeholder: String? = nil
     var onSend: () -> Void
     var onStop: () -> Void
     var onAttach: (() -> Void)? = nil
@@ -19,6 +20,7 @@ struct ComposerView: View {
 
     @FocusState private var focused: Bool
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var attachHovered = false
 
     var body: some View {
@@ -50,7 +52,8 @@ struct ComposerView: View {
         TextField(
             "",
             text: $text,
-            prompt: Text(placeholder).foregroundStyle(DS.Colors.labelTertiary),
+            prompt: Text(placeholder ?? L10n.t(.chatInputPlaceholderChat))
+                .foregroundStyle(DS.Colors.labelTertiary),
             axis: .vertical
         )
         .textFieldStyle(.plain)
@@ -71,12 +74,22 @@ struct ComposerView: View {
 
     // MARK: 功能行
 
+    /// 紧凑宽度（iPhone、iPad 分屏）下开关只留图标，
+    /// 否则「深度思考 + 智能搜索 + 麦克风 + 附件 + 发送」会挤爆一行。
+    private var pillsCompact: Bool {
+        #if os(iOS)
+        horizontalSizeClass == .compact
+        #else
+        false
+        #endif
+    }
+
     private var functionRow: some View {
         HStack(spacing: 8) {
-            TogglePill(isOn: $thinking, systemImage: "brain", title: "深度思考",
-                       help: "先思考后回答，解决推理问题")
-            TogglePill(isOn: $search, systemImage: "globe", title: "智能搜索",
-                       help: "按需搜索网页")
+            TogglePill(isOn: $thinking, systemImage: "brain", title: L10n.t(.thinkingSwitch),
+                       help: L10n.t(.deactivatedThinkTooltip), compact: pillsCompact)
+            TogglePill(isOn: $search, systemImage: "globe", title: L10n.t(.search),
+                       help: L10n.t(.deactivatedSearchTooltip), compact: pillsCompact)
             Spacer(minLength: 0)
             VoiceInputButton(text: $text)
             if let onAttach {
@@ -92,7 +105,8 @@ struct ComposerView: View {
                 }
                 .buttonStyle(.plain)
                 .onHover { attachHovered = $0 }
-                .help("上传文件")
+                .help(L10n.t(.uploadFile))
+                .accessibilityLabel(L10n.t(.uploadFile))
             }
             sendButton
         }
@@ -118,7 +132,8 @@ struct ComposerView: View {
         }
         .buttonStyle(.plain)
         .disabled(!isStreaming && !canSend)
-        .help(isStreaming ? "停止生成" : "发送")
+        .help(isStreaming ? L10n.t(.chatInputStopButtonTooltip) : L10n.t(.send))
+        .accessibilityLabel(isStreaming ? L10n.t(.chatInputStopButtonTooltip) : L10n.t(.send))
     }
 
     // MARK: 外壳玻璃（A1：只在外壳层）
@@ -155,6 +170,7 @@ private struct TogglePill: View {
     let systemImage: String
     let title: String
     var help: String
+    var compact: Bool = false
     @State private var hovered = false
 
     var body: some View {
@@ -164,12 +180,15 @@ private struct TogglePill: View {
             HStack(spacing: 4) {
                 Image(systemName: systemImage)
                     .font(.system(size: 13, weight: .regular))
-                Text(title)
-                    .font(DS.Typography.body)
+                if !compact {
+                    Text(title)
+                        .font(DS.Typography.body)
+                        .lineLimit(1)
+                }
             }
             .foregroundStyle(isOn ? DS.Colors.brandText : DS.Colors.labelSecondary)
-            .padding(.horizontal, 12)
-            .frame(height: 34)
+            .padding(.horizontal, compact ? 0 : 12)
+            .frame(width: compact ? 34 : nil, height: 34)
             .background {
                 Capsule()
                     .fill(isOn ? DS.Colors.brandSubtle : (hovered ? DS.Colors.interactiveHover : .clear))
@@ -184,6 +203,7 @@ private struct TogglePill: View {
         .buttonStyle(.plain)
         .onHover { hovered = $0 }
         .help(help)
+        .accessibilityLabel(title)
         .accessibilityAddTraits(isOn ? [.isSelected] : [])
     }
 }

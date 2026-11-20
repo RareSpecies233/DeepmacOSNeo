@@ -18,6 +18,9 @@ struct ChatSession: Identifiable, Codable, Hashable {
     /// 注意：必须是 Optional。合成 Codable 对非可选字段会用 decode（而非 decodeIfPresent），
     /// 旧版本 sessions.json 缺这个 key 会直接抛错，load() 里的 try? 会静默清空全部会话。
     var pendingAttachments: [FileAttachment]?
+    /// 同一轮回答的多版本。键 = 该轮 assistant 回复之前那条 user 消息的 id。
+    /// 同样必须是 Optional：旧数据没有这个 key 时行为与线性会话完全一致。
+    var variantGroups: [String: VariantGroup]?
 
     var draftAttachments: [FileAttachment] { pendingAttachments ?? [] }
 
@@ -97,6 +100,33 @@ final class ChatStore {
     func session(_ id: UUID) -> ChatSession? { sessions.first { $0.id == id } }
 
     func index(of id: UUID) -> Int? { sessions.firstIndex { $0.id == id } }
+
+    // MARK: 消息版本
+
+    /// 当前可见的消息：每个版本组只保留选中的那条，渲染与请求历史共用。
+    func visibleMessages(in sessionID: UUID) -> [ChatMessage] {
+        guard let session = session(sessionID) else { return [] }
+        return Branching.visibleMessages(in: session)
+    }
+
+    /// 某条消息的版本信息；不在任何版本组里时为 nil。
+    func versionInfo(for messageID: String, in sessionID: UUID) -> Branching.VersionInfo? {
+        guard let session = session(sessionID) else { return nil }
+        return Branching.versionInfo(for: messageID, in: session)
+    }
+
+    /// 切换到某个版本。只改选中下标，不删除任何历史版本。
+    func selectVersion(_ messageID: String, in sessionID: UUID) {
+        guard let i = index(of: sessionID), !isStreaming(sessionID),
+              let groups = sessions[i].variantGroups else { return }
+        for (anchor, group) in groups {
+            guard let position = group.messageIDs.firstIndex(of: messageID),
+                  position != group.selected else { continue }
+            sessions[i].variantGroups?[anchor]?.selected = position
+            scheduleSave()
+            return
+        }
+    }
 
     // MARK: 会话操作
 
@@ -264,24 +294,87 @@ final class ChatStore {
         return true
     }
 
-    /// 重新生成最后一条助手回复
+    /// 重新生成最后一条助手回复：旧回答保留为历史版本，新回答追加并选中。
     func regenerate(sessionID: UUID) {
         guard let i = index(of: sessionID), !isStreaming(sessionID) else { return }
-        // 移除末尾的 assistant 消息（若有）
-        while let last = sessions[i].messages.last, last.role == .assistant {
-            sessions[i].messages.removeLast()
-        }
+        let messages = sessions[i].messages
+        guard let last = messages.last, last.role == .assistant,
+              let anchor = Branching.anchorID(forAssistantAt: messages.count - 1, in: messages) else { return }
         guard let client = settings.client else {
             lastError = "接口地址无效"
             return
         }
+
+        let assistantID = UUID().uuidString
+        sessions[i].variantGroups = Branching.registerVersion(
+            assistantID,
+            replacing: last.id,
+            anchorID: anchor,
+            in: sessions[i].variantGroups
+        )
+        sessions[i].messages.append(
+            ChatMessage(id: assistantID, role: .assistant, blocks: [], createdAt: .now,
+                        status: .streaming, model: sessions[i].model)
+        )
+        sessions[i].updatedAt = .now
+
+        let request = buildRequest(session: sessions[i], generateTitle: false)
+        startStream(client: client, request: request, sessionID: sessionID, messageID: assistantID)
+        scheduleSave()
+    }
+
+    /// 编辑用户消息并重新请求：截断该消息之后的所有消息（含其版本组），
+    /// 原地替换文本，然后自动发起新的回答。
+    @discardableResult
+    func editAndResend(sessionID: UUID, messageID: String, text: String) -> Bool {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let i = index(of: sessionID), !isStreaming(sessionID),
+              let mi = sessions[i].messages.firstIndex(where: { $0.id == messageID }),
+              sessions[i].messages[mi].role == .user else { return false }
+
+        let original = sessions[i].messages[mi]
+        let files = original.blocks.filter { $0.kind == .file }
+        guard !trimmed.isEmpty || !files.isEmpty else { return false }
+        guard let client = settings.client else {
+            lastError = "接口地址无效"
+            return false
+        }
+
+        // 1. 先裁剪版本组，再截断消息，避免留下指向已删除消息的下标。
+        //    被编辑消息自己的版本组也一并丢弃（其回答都会被截断）。
+        let removedIDs = Set(sessions[i].messages[(mi + 1)...].map(\.id))
+        sessions[i].variantGroups = Branching.prune(
+            sessions[i].variantGroups,
+            removingMessageIDs: removedIDs,
+            anchorIDs: [messageID]
+        )
+
+        // 2. 截断该消息之后的所有消息（含失效的版本与后续对话）。
+        if mi + 1 < sessions[i].messages.count {
+            sessions[i].messages.removeSubrange((mi + 1)...)
+        }
+
+        // 3. 原地替换文本，保留已上传附件。
+        var blocks: [Block] = []
+        if !trimmed.isEmpty {
+            blocks.append(Block(id: "u0", kind: .text, text: trimmed))
+        }
+        blocks.append(contentsOf: files)
+        sessions[i].messages[mi].blocks = blocks
+        sessions[i].messages[mi].createdAt = .now
+
+        // 4. 自动重新请求。
         let assistantID = UUID().uuidString
         sessions[i].messages.append(
             ChatMessage(id: assistantID, role: .assistant, blocks: [], createdAt: .now,
                         status: .streaming, model: sessions[i].model)
         )
+        sessions[i].updatedAt = .now
+
         let request = buildRequest(session: sessions[i], generateTitle: false)
         startStream(client: client, request: request, sessionID: sessionID, messageID: assistantID)
+        scheduleSave()
+        return true
     }
 
     /// 继续生成被停止的回复
@@ -384,7 +477,9 @@ final class ChatStore {
 
     private func buildRequest(session: ChatSession, generateTitle: Bool) -> ChatRequest {
         var history: [RequestMessage] = []
-        for message in session.messages {
+        // 版本组只发送当前选中的回答；否则同一轮会出现多份上下文。
+        // 旧会话没有 variantGroups 时 visibleMessages 原样返回 messages。
+        for message in Branching.visibleMessages(in: session) {
             if message.role == .assistant && message.status == .streaming && message.blocks.isEmpty {
                 continue // 跳过空占位
             }

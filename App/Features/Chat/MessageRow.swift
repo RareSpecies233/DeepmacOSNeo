@@ -5,7 +5,12 @@ struct MessageRow: View {
     let message: ChatMessage
     let isStreaming: Bool
     var isLastAssistant: Bool = false
+    /// 当前消息所属的版本组；nil 表示不显示切换器（旧数据 / 首版）。
+    var version: Branching.VersionInfo?
+    var versionSwitchDisabled: Bool = false
+    var onSelectVersion: ((String) -> Void)?
     var onRegenerate: (() -> Void)?
+    var onEditUserMessage: (() -> Void)?
     @State private var hovered = false
     @State private var copied = false
 
@@ -33,6 +38,11 @@ struct MessageRow: View {
                     RoundedRectangle(cornerRadius: 16)
                         .fill(DS.Colors.bubble)
                 }
+        }
+        .contextMenu {
+            if let onEditUserMessage {
+                Button("编辑并重新发送", systemImage: "square.and.pencil", action: onEditUserMessage)
+            }
         }
     }
 
@@ -88,11 +98,41 @@ struct MessageRow: View {
             if isLastAssistant && !isStreaming, let onRegenerate {
                 ActionIcon(systemName: "arrow.clockwise", help: "重新生成", action: onRegenerate)
             }
+            if let version, version.count > 1 {
+                versionSwitcher(version)
+            }
             Spacer()
         }
         .opacity(hovered || isStreaming == false ? 1 : 1)
         .padding(.top, 6)
         .frame(height: 26)
+    }
+
+    /// `‹ 2/3 ›`：仅在存在多个版本时出现，切换只改变选中项，不删除历史。
+    private func versionSwitcher(_ version: Branching.VersionInfo) -> some View {
+        HStack(spacing: 0) {
+            ActionIcon(
+                systemName: "chevron.left",
+                help: "上一版本",
+                isEnabled: version.index > 0 && !versionSwitchDisabled
+            ) {
+                if let id = version.previousID { onSelectVersion?(id) }
+            }
+            Text("\(version.displayIndex)/\(version.count)")
+                .font(.system(size: 11, weight: .medium))
+                .monospacedDigit()
+                .foregroundStyle(DS.Colors.labelTertiary)
+                .frame(minWidth: 30)
+                .accessibilityLabel("版本 \(version.displayIndex) / \(version.count)")
+            ActionIcon(
+                systemName: "chevron.right",
+                help: "下一版本",
+                isEnabled: version.index + 1 < version.count && !versionSwitchDisabled
+            ) {
+                if let id = version.nextID { onSelectVersion?(id) }
+            }
+        }
+        .padding(.horizontal, 2)
     }
 
     private func copyToPasteboard(_ text: String) {
@@ -108,6 +148,7 @@ struct MessageRow: View {
 private struct ActionIcon: View {
     let systemName: String
     var help: String
+    var isEnabled: Bool = true
     var action: () -> Void
     @State private var hovered = false
 
@@ -124,6 +165,8 @@ private struct ActionIcon: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .disabled(!isEnabled)
+        .opacity(isEnabled ? 1 : 0.35)
         .onHover { hovered = $0 }
         .help(help)
     }

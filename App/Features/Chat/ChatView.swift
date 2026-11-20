@@ -18,6 +18,7 @@ struct ChatView: View {
     @State private var lastAutoScroll = Date.distantPast
     @State private var showFileImporter = false
     @State private var uploader = FileUploader()
+    @State private var editingDraft: EditDraft?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -28,6 +29,15 @@ struct ChatView: View {
             composer
         }
         .background(DS.Colors.bgBase)
+        .sheet(item: $editingDraft) { draft in
+            EditMessageSheet(initialText: draft.text) {
+                editingDraft = nil
+            } onResend: { text in
+                if store.editAndResend(sessionID: sessionID, messageID: draft.id, text: text) {
+                    editingDraft = nil
+                }
+            }
+        }
     }
 
     // MARK: 移动端顶栏
@@ -67,13 +77,20 @@ struct ChatView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 24) {
-                    if let messages = session?.messages {
+                    if let session {
+                        let messages = Branching.visibleMessages(in: session)
                         ForEach(Array(messages.enumerated()), id: \.element.id) { index, message in
                             MessageRow(
                                 message: message,
                                 isStreaming: message.status == .streaming,
                                 isLastAssistant: index == messages.count - 1 && message.role == .assistant,
-                                onRegenerate: { store.regenerate(sessionID: sessionID) }
+                                version: Branching.versionInfo(for: message.id, in: session),
+                                versionSwitchDisabled: isStreaming,
+                                onSelectVersion: { store.selectVersion($0, in: sessionID) },
+                                onRegenerate: { store.regenerate(sessionID: sessionID) },
+                                onEditUserMessage: message.role == .user && !isStreaming
+                                    ? { editingDraft = EditDraft(id: message.id, text: message.plainText) }
+                                    : nil
                             )
                         }
                     }
@@ -89,7 +106,9 @@ struct ChatView: View {
                 // 距底部还有多远（>0 表示已经离开底部）
                 geometry.contentSize.height - (geometry.contentOffset.y + geometry.containerSize.height)
             } action: { _, distanceFromBottom in
-                let atBottom = distanceFromBottom < 40
+                // 阈值给足：内容内边距、圆角与安全区都会被算进 contentSize，
+                // 阈值过小会在明明贴底时误判为"已离开底部"。
+                let atBottom = distanceFromBottom < 200
                 if atBottom != followBottom {
                     followBottom = atBottom
                 }
@@ -156,10 +175,12 @@ struct ChatView: View {
         )
     }
 
-    /// 用于触发滚动的轻量签名：消息条数 + 末条内容长度
+    /// 用于触发滚动的轻量签名：可见消息条数 + 末条内容长度
     private var scrollSignature: Int {
-        guard let last = session?.messages.last else { return 0 }
-        return (session?.messages.count ?? 0) * 100_000 + last.plainText.count + last.blocks.count
+        guard let session else { return 0 }
+        let messages = Branching.visibleMessages(in: session)
+        guard let last = messages.last else { return 0 }
+        return messages.count * 100_000 + last.plainText.count + last.blocks.count
     }
 
     // MARK: 输入框
@@ -211,5 +232,73 @@ struct ChatView: View {
                 )
             }
         }
+    }
+}
+
+// MARK: - 编辑用户消息
+
+/// 当前正在编辑的用户消息（用于 `.sheet(item:)`）。
+private struct EditDraft: Identifiable {
+    /// 被编辑的 user 消息 id。
+    let id: String
+    let text: String
+}
+
+/// 编辑并重新发送的弹窗。确认后由 ChatStore 截断后续消息并自动重新请求。
+private struct EditMessageSheet: View {
+    let onCancel: () -> Void
+    let onResend: (String) -> Void
+    @State private var text: String
+    @FocusState private var focused: Bool
+
+    init(initialText: String, onCancel: @escaping () -> Void, onResend: @escaping (String) -> Void) {
+        self.onCancel = onCancel
+        self.onResend = onResend
+        _text = State(initialValue: initialText)
+    }
+
+    private var canResend: Bool {
+        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("编辑并重新发送")
+                .font(DS.Typography.title)
+                .foregroundStyle(DS.Colors.labelPrimary)
+
+            Text("确认后会截断这条消息之后的对话（含历史版本），并重新请求回答。")
+                .font(DS.Typography.caption)
+                .foregroundStyle(DS.Colors.labelTertiary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            TextField("", text: $text, axis: .vertical)
+                .textFieldStyle(.plain)
+                .font(DS.Typography.userBody)
+                .lineLimit(3...8)
+                .focused($focused)
+                .padding(10)
+                .background {
+                    RoundedRectangle(cornerRadius: DS.Radius.m)
+                        .fill(DS.Colors.inputFill)
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: DS.Radius.m)
+                        .strokeBorder(DS.Colors.borderL2, lineWidth: 1)
+                }
+
+            HStack(spacing: 8) {
+                Spacer()
+                Button("取消", role: .cancel, action: onCancel)
+                    .keyboardShortcut(.cancelAction)
+                Button("重新发送") { onResend(text) }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(!canResend)
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: 420)
+        .background(DS.Colors.bgBase)
+        .onAppear { focused = true }
     }
 }

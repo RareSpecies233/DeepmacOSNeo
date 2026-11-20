@@ -15,7 +15,7 @@ struct SettingsAPIKeySection: View {
     @State private var isRevealed = false
     @State private var isVerifying = false
     @State private var saveError: String?
-    @State private var notice: String?
+    @State private var didSaveNotice = false
 
     @Environment(\.horizontalSizeClass) private var sizeClass
 
@@ -26,7 +26,7 @@ struct SettingsAPIKeySection: View {
         VStack(alignment: .leading, spacing: 10) {
             SettingsRowHeader(
                 title: "API Key",
-                subtitle: "只保存在本机钥匙串；验证只请求 GET /models，不产生费用"
+                subtitle: L10n.t(.apiKeyStorageNote)
             )
             inputRow
             actionRow
@@ -40,9 +40,9 @@ struct SettingsAPIKeySection: View {
         HStack(spacing: 8) {
             Group {
                 if isRevealed {
-                    TextField("请输入 API Key", text: $draft)
+                    TextField(L10n.t(.apiKeyPlaceholder), text: $draft)
                 } else {
-                    SecureField("请输入 API Key", text: $draft)
+                    SecureField(L10n.t(.apiKeyPlaceholder), text: $draft)
                 }
             }
             .textFieldStyle(.plain)
@@ -61,7 +61,7 @@ struct SettingsAPIKeySection: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(isRevealed ? "隐藏 API Key" : "显示 API Key")
+            .accessibilityLabel(L10n.t(isRevealed ? L10nKey.hideAPIKey : L10nKey.showAPIKey))
         }
         .padding(.leading, 12)
         .padding(.trailing, 6)
@@ -74,7 +74,7 @@ struct SettingsAPIKeySection: View {
     private var actionRow: some View {
         HStack(spacing: 8) {
             SettingsButton(
-                title: "保存",
+                title: L10n.t(.save),
                 kind: .primary,
                 isEnabled: !trimmedDraft.isEmpty
             ) {
@@ -82,7 +82,7 @@ struct SettingsAPIKeySection: View {
             }
 
             SettingsButton(
-                title: "验证",
+                title: L10n.t(.verify),
                 kind: .secondary,
                 isLoading: isVerifying,
                 isEnabled: settings.hasAPIKey || !trimmedDraft.isEmpty
@@ -101,15 +101,16 @@ struct SettingsAPIKeySection: View {
         if let saveError {
             statusLine(
                 icon: "exclamationmark.circle.fill",
-                text: "保存失败：\(saveError)",
+                text: L10n.t(.apiKeySaveFailed, ["message": saveError]),
                 color: DS.Colors.errorPrimary
             )
         } else if isVerifying {
-            statusLine(icon: "clock", text: "正在验证 API Key…", color: DS.Colors.labelSecondary)
+            statusLine(icon: "clock", text: L10n.t(.apiKeyVerifying),
+                color: DS.Colors.labelSecondary)
         } else if !settings.hasAPIKey && trimmedDraft.isEmpty {
             statusLine(
                 icon: "info.circle",
-                text: "尚未填写 API Key，填写并保存后即可连接 DeepSeek 接口",
+                text: L10n.t(.apiKeyEmptyHint),
                 color: DS.Colors.labelTertiary
             )
         } else {
@@ -117,28 +118,29 @@ struct SettingsAPIKeySection: View {
             case .valid:
                 statusLine(
                     icon: "checkmark.circle.fill",
-                    text: "Key 可用",
+                    text: L10n.t(.apiKeyValid),
                     color: SettingsPalette.success
                 )
             case .invalid(let reason):
                 statusLine(
                     icon: "xmark.circle.fill",
-                    text: "Key 校验失败：\(reason)",
+                    text: L10n.t(.apiKeyVerificationFailed, ["message": reason]),
                     color: DS.Colors.errorPrimary
                 )
             case .unknown:
                 if !trimmedDraft.isEmpty {
                     statusLine(
                         icon: "circle.dashed",
-                        text: "已输入新的 Key，尚未保存",
+                        text: L10n.t(.apiKeyUnsaved),
                         color: DS.Colors.labelTertiary
                     )
-                } else if let notice {
-                    statusLine(icon: "checkmark.seal", text: notice, color: DS.Colors.labelSecondary)
+                } else if didSaveNotice {
+                    statusLine(icon: "checkmark.seal", text: L10n.t(.apiKeySavedNote),
+                               color: DS.Colors.labelSecondary)
                 } else {
                     statusLine(
                         icon: "clock",
-                        text: "已保存，尚未验证",
+                        text: L10n.t(.apiKeySavedUnverified),
                         color: DS.Colors.labelTertiary
                     )
                 }
@@ -169,7 +171,7 @@ struct SettingsAPIKeySection: View {
             try settings.saveAPIKey(draft)
             draft = ""
             isRevealed = false
-            notice = "已保存到钥匙串"
+            didSaveNotice = true
         } catch {
             saveError = error.localizedDescription
         }
@@ -177,7 +179,7 @@ struct SettingsAPIKeySection: View {
 
     private func verify() async {
         saveError = nil
-        notice = nil
+        didSaveNotice = false
 
         if !trimmedDraft.isEmpty {
             do {

@@ -16,7 +16,7 @@ struct WelcomeView: View {
             Spacer(minLength: 0)
             VStack(spacing: 21) {
                 // 原版 Welcome.module.css：24/32、600、下边距 21
-                Text("今天有什么可以帮到你？")
+                Text(L10n.t(.welcomeMessageChat250808))
                     .font(.system(size: 24, weight: .semibold))
                     .foregroundStyle(DS.Colors.labelPrimary)
                     .multilineTextAlignment(.center)
@@ -41,7 +41,7 @@ struct WelcomeView: View {
             .padding(.horizontal, 32)
             .frame(maxWidth: DS.Metrics.messageListMaxWidth)
             Spacer(minLength: 0)
-            Text("内容由 AI 生成，请仔细甄别")
+            Text(L10n.t(.contentCaveat))
                 .font(DS.Typography.caption)
                 .foregroundStyle(DS.Colors.labelCaption)
                 .padding(.bottom, 16)

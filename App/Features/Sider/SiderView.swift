@@ -29,17 +29,17 @@ struct SiderView: View {
         .frame(width: DS.Metrics.sidebarWidth)
         .background(sidebarBackground)
         .confirmationDialog(
-            "删除这个对话？",
+            L10n.t(.deleteSessionConfirmTitle),
             isPresented: Binding(get: { confirmDelete != nil }, set: { if !$0 { confirmDelete = nil } }),
             titleVisibility: .visible
         ) {
-            Button("删除", role: .destructive) {
+            Button(L10n.t(.delete), role: .destructive) {
                 if let id = confirmDelete { store.delete(id) }
                 confirmDelete = nil
             }
-            Button("取消", role: .cancel) { confirmDelete = nil }
+            Button(L10n.t(.cancel), role: .cancel) { confirmDelete = nil }
         } message: {
-            Text("删除后无法恢复。")
+            Text(L10n.t(.deleteSessionConfirmMessage))
         }
     }
 
@@ -51,13 +51,13 @@ struct SiderView: View {
             // 给窗口红绿灯留出空间
             Color.clear.frame(width: 66, height: 1)
             #endif
-            Text("API 使用 demo")
+            Text(L10n.t(.appName))
                 .font(DS.Typography.bodyMedium)
                 .foregroundStyle(DS.Colors.labelPrimary)
                 .lineLimit(1)
             Spacer(minLength: 4)
             if let onCollapse {
-                IconAction(systemName: "sidebar.left", help: "收起边栏", action: onCollapse)
+                IconAction(systemName: "sidebar.left", help: L10n.t(.collapseSiderbarButton), action: onCollapse)
             }
         }
         .padding(.horizontal, 12)
@@ -73,7 +73,7 @@ struct SiderView: View {
             HStack(spacing: 6) {
                 Image(systemName: "square.and.pencil")
                     .font(.system(size: 15, weight: .regular))
-                Text("开启新对话")
+                Text(L10n.t(.newChat))
                     .font(DS.Typography.bodyMedium)
             }
             .foregroundStyle(DS.Colors.labelPrimary)
@@ -95,7 +95,7 @@ struct SiderView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
                 ForEach(groups) { group in
-                    Text(group.label)
+                    Text(groupTitle(group))
                         .font(DS.Typography.caption)
                         .foregroundStyle(DS.Colors.labelTertiary)
                         .padding(.horizontal, 10)
@@ -131,6 +131,22 @@ struct SiderView: View {
         .scrollIndicators(.never)
     }
 
+    /// 分组标题：「今天 / 昨天 / 7 天内 / 30 天内」按 id 取文案；年-月按当前语言格式化。
+    private func groupTitle(_ group: SessionGroup) -> String {
+        if let date = group.monthDate {
+            return date.formatted(
+                .dateTime.year().month().locale(settings.language.locale)
+            )
+        }
+        switch group.id {
+        case "today": return L10n.t(.sessionHistoryTimelineLabelToday)
+        case "yesterday": return L10n.t(.sessionHistoryTimelineLabelYesterday)
+        case "week": return L10n.t(.sessionHistoryTimelineLabel7days)
+        case "month": return L10n.t(.sessionHistoryTimelineLabel30days)
+        default: return group.id
+        }
+    }
+
     // MARK: 底部
 
     private var footer: some View {
@@ -140,20 +156,20 @@ struct SiderView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "gearshape")
                         .font(.system(size: 15))
-                    Text("设置")
+                    Text(L10n.t(.settings))
                         .font(DS.Typography.body)
                     Spacer(minLength: 6)
                     if settings.showsBalance {
-                        Text(balance.displayText ?? (balance.isLoading ? "查询余额…" : "—"))
+                        Text(balance.displayText ?? (balance.isLoading ? L10n.t(.balanceLoading) : "—"))
                             .font(DS.Typography.caption)
                             .foregroundStyle(DS.Colors.labelTertiary)
                             .lineLimit(1)
-                            .help(balance.lastError ?? "账户余额")
+                            .help(balance.lastError ?? L10n.t(.accountBalance))
                     }
                     Circle()
                         .fill(settings.hasAPIKey ? Color.green.opacity(0.85) : DS.Colors.labelTertiary.opacity(0.5))
                         .frame(width: 6, height: 6)
-                        .help(settings.hasAPIKey ? "已配置 API Key" : "未配置 API Key")
+                        .help(settings.hasAPIKey ? L10n.t(.apiKeyConfigured) : L10n.t(.apiKeyNotConfigured))
                 }
                 .foregroundStyle(DS.Colors.labelSecondary)
                 .padding(.horizontal, 12)
@@ -162,11 +178,11 @@ struct SiderView: View {
             }
             .buttonStyle(.plain)
             .contextMenu {
-                Toggle("显示账户余额", isOn: Binding(
+                Toggle(L10n.t(.showBalance), isOn: Binding(
                     get: { settings.showsBalance },
                     set: { settings.showsBalance = $0 }
                 ))
-                Button("刷新余额") {
+                Button(L10n.t(.refreshBalance)) {
                     Task { await balance.refresh(settings: settings, force: true) }
                 }
             }
@@ -193,7 +209,8 @@ struct SiderView: View {
 
 struct SessionGroup: Identifiable {
     let id: String
-    let label: String
+    /// 年-月分组的日期，标题按当前语言格式化；今天/昨天等分组为 nil，按 id 取文案
+    let monthDate: Date?
     var sessions: [ChatSession]
 
     static func group(_ sessions: [ChatSession], now: Date) -> [SessionGroup] {
@@ -205,21 +222,21 @@ struct SessionGroup: Identifiable {
             let day = calendar.startOfDay(for: session.updatedAt)
             let diff = calendar.dateComponents([.day], from: day, to: today).day ?? 0
             let key: String
-            let label: String
+            var monthDate: Date?
             switch diff {
-            case ..<1: (key, label) = ("today", "今天")
-            case 1: (key, label) = ("yesterday", "昨天")
-            case 2..<7: (key, label) = ("week", "7 天内")
-            case 7..<30: (key, label) = ("month", "30 天内")
+            case ..<1: key = "today"
+            case 1: key = "yesterday"
+            case 2..<7: key = "week"
+            case 7..<30: key = "month"
             default:
                 let comps = calendar.dateComponents([.year, .month], from: session.updatedAt)
                 key = "m-\(comps.year ?? 0)-\(comps.month ?? 0)"
-                label = "\(comps.year ?? 0) 年 \(comps.month ?? 0) 月"
+                monthDate = calendar.date(from: comps)
             }
             if groups.last?.id == key {
                 groups[groups.count - 1].sessions.append(session)
             } else {
-                groups.append(SessionGroup(id: key, label: label, sessions: [session]))
+                groups.append(SessionGroup(id: key, monthDate: monthDate, sessions: [session]))
             }
         }
         return groups
@@ -243,7 +260,7 @@ private struct SessionRow: View {
     var body: some View {
         HStack(spacing: 6) {
             if isRenaming {
-                TextField("对话名称", text: $renameText)
+                TextField(L10n.t(.sessionName), text: $renameText)
                     .textFieldStyle(.plain)
                     .font(DS.Typography.body)
                     .onSubmit(onCommitRename)
@@ -261,10 +278,10 @@ private struct SessionRow: View {
                 }
                 if isHovered {
                     Menu {
-                        Button("重命名", action: onBeginRename)
-                        Button(session.pinned ? "取消置顶" : "置顶", action: onPin)
+                        Button(L10n.t(.sessionItemMenuRenameOption), action: onBeginRename)
+                        Button(session.pinned ? L10n.t(.unpin) : L10n.t(.pin), action: onPin)
                         Divider()
-                        Button("删除", role: .destructive, action: onDelete)
+                        Button(L10n.t(.delete), role: .destructive, action: onDelete)
                     } label: {
                         Image(systemName: "ellipsis")
                             .font(.system(size: 12, weight: .semibold))
@@ -287,10 +304,10 @@ private struct SessionRow: View {
         .contentShape(Rectangle())
         .onTapGesture(perform: onSelect)
         .contextMenu {
-            Button("重命名", action: onBeginRename)
-            Button(session.pinned ? "取消置顶" : "置顶", action: onPin)
+            Button(L10n.t(.sessionItemMenuRenameOption), action: onBeginRename)
+            Button(session.pinned ? L10n.t(.unpin) : L10n.t(.pin), action: onPin)
             Divider()
-            Button("删除", role: .destructive, action: onDelete)
+            Button(L10n.t(.delete), role: .destructive, action: onDelete)
         }
     }
 }

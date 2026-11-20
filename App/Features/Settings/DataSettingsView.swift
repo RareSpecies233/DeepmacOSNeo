@@ -30,13 +30,13 @@ struct SettingsDataView: View {
                 .padding(.vertical, 16)
         }
         .alert(
-            "删除后，所有对话都将被清空且无法找回",
+            L10n.t(.deleteAllSessionsModalTitle),
             isPresented: $isConfirmingClear
         ) {
-            Button("取消", role: .cancel) {}
-            Button("清空全部会话", role: .destructive) { onClearAll() }
+            Button(L10n.t(.cancel), role: .cancel) {}
+            Button(L10n.t(.deleteAllSessions), role: .destructive) { onClearAll() }
         } message: {
-            Text("本地保存的附件及未发送的草稿也将被删除。")
+            Text(L10n.t(.deleteAllSessionsModalDescription))
         }
     }
 
@@ -54,10 +54,10 @@ struct SettingsDataView: View {
                 }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("会话保存在本机")
+                Text(L10n.t(.localStorageTitle))
                     .font(DS.Typography.bodyMedium)
                     .foregroundStyle(DS.Colors.labelPrimary)
-                Text("所有会话与附件都写入本地 SwiftData 数据库，不会上传到服务器。")
+                Text(L10n.t(.localStorageDescription))
                     .font(DS.Typography.caption)
                     .foregroundStyle(DS.Colors.labelTertiary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -75,11 +75,11 @@ struct SettingsDataView: View {
         if compact {
             VStack(alignment: .leading, spacing: 10) {
                 SettingsRowHeader(
-                    title: "清空全部会话",
-                    subtitle: "删除后，所有对话都将被清空且无法找回。"
+                    title: L10n.t(.deleteAllSessions),
+                    subtitle: L10n.t(.deleteAllSessionsModalTitle)
                 )
                 SettingsButton(
-                    title: "清空全部会话",
+                    title: L10n.t(.deleteAllSessions),
                     kind: .danger,
                     expands: true
                 ) {
@@ -89,11 +89,11 @@ struct SettingsDataView: View {
         } else {
             HStack(alignment: .center, spacing: 12) {
                 SettingsRowHeader(
-                    title: "清空全部会话",
-                    subtitle: "删除后，所有对话都将被清空且无法找回。"
+                    title: L10n.t(.deleteAllSessions),
+                    subtitle: L10n.t(.deleteAllSessionsModalTitle)
                 )
                 SettingsButton(
-                    title: "清空全部会话",
+                    title: L10n.t(.deleteAllSessions),
                     kind: .danger
                 ) {
                     isConfirmingClear = true
@@ -107,7 +107,7 @@ struct SettingsDataView: View {
     private var aboutBlock: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
-                Text("版本")
+                Text(L10n.t(.version))
                     .font(DS.Typography.body)
                     .foregroundStyle(DS.Colors.labelPrimary)
                 Spacer(minLength: 8)
@@ -117,9 +117,9 @@ struct SettingsDataView: View {
                     .foregroundStyle(DS.Colors.labelSecondary)
             }
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("版本 \(Self.version)")
+            .accessibilityLabel(L10n.t(.versionA11y, ["version": Self.version]))
 
-            Text("基于 DeepSeek 官方 chat-demo 设计，MIT")
+            Text(L10n.t(.aboutCredit))
                 .font(DS.Typography.caption)
                 .foregroundStyle(DS.Colors.labelTertiary)
         }
