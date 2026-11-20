@@ -123,7 +123,11 @@ python3 scripts/mock-server.py       # 127.0.0.1:8787，输出带思考/搜索/�
 ```bash
 DEEPSEEK_API_KEY=sk-xxx open -n build/dd/Build/Products/Debug/DeepGlass.app --args --demo
 # 可选：--dark  --settings  --origin=http://127.0.0.1:8787  --prompt="..."
+# QA：--qa-branch 连续两次重新生成，用于验证版本切换
 ```
+
+数据隔离：`DEEPGLASS_STORE_DIR=/tmp/dgqa` 可让 QA 实例使用独立会话目录，
+不会碰 `~/Library/Application Support/DeepGlass/`。
 
 ## 结构
 
@@ -156,5 +160,5 @@ swift test --package-path Core
 
 ## 已知未实现
 
-消息分支切换（重新生成会替换末尾回复）、中英文切换、引用角标内联跳转、拖拽入附件。
+引用角标内联跳转、拖拽入附件、历史导入导出（原版 zip 格式）。
 详见 [PLAN.md](PLAN.md) 的 P1/P2 清单。

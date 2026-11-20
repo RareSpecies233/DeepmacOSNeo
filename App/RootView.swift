@@ -38,6 +38,18 @@ struct RootView: View {
             .task {
                 if CommandLine.arguments.contains("--dark") { settings.theme = .dark }
                 if CommandLine.arguments.contains("--settings") { showSettings = true }
+                if CommandLine.arguments.contains("--qa-branch") {
+                    // QA：连续两次「重新生成」，用于验证 ‹2/3› 版本切换
+                    let id = store.newSession()
+                    _ = store.send(text: "用一句话解释什么是版本分支", in: id)
+                    while store.isStreaming(id) { try? await Task.sleep(for: .milliseconds(200)) }
+                    try? await Task.sleep(for: .milliseconds(300))
+                    store.regenerate(sessionID: id)
+                    while store.isStreaming(id) { try? await Task.sleep(for: .milliseconds(200)) }
+                    try? await Task.sleep(for: .milliseconds(300))
+                    store.regenerate(sessionID: id)
+                    return
+                }
                 guard DemoMode.isActive else { return }
                 settings.runtimeOrigin = DemoMode.origin
                 settings.thinking = true
