@@ -62,6 +62,7 @@
 		5D22F69CF4999495ED3B3B82 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B36C4149E090299B763D24B0 /* WelcomeView.swift */; };
 		5EF8F87E9024253AB27456F0 /* Tokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF16014AA5A730D3E4A4359A /* Tokens.swift */; };
 		5FBFBB7EE6D39CAFD1130CCA /* KaTeX_SansSerif-Bold.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 6E8938B2708523797E365DA6 /* KaTeX_SansSerif-Bold.woff2 */; };
+		60C11C76ED463433589EAB40 /* FileAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54D3FB00CCAB05A329F40050 /* FileAttachment.swift */; };
 		6235C0440C17B17D6804946C /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D758183B90351C9E17EAD79D /* AppSettings.swift */; };
 		62BF622CF6259B1019BFFA99 /* ThinkingTimeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 896648B6FA3F836F29CBA35B /* ThinkingTimeline.swift */; };
 		65B462BAD5EE51971FD086C7 /* katex.min.css in Resources */ = {isa = PBXBuildFile; fileRef = A2C22A565826CC79D2127E66 /* katex.min.css */; };
@@ -74,6 +75,7 @@
 		758892DD0238432B6222CB2A /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5BA1CEBF3AF1B8A99A2DA76 /* ChatView.swift */; };
 		77ACF0BE9989737E4876760F /* KaTeX_Script-Regular.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 9FED87E8E21A9EC0D6BCD287 /* KaTeX_Script-Regular.woff2 */; };
 		7A1FEBB370E56AA7987A104C /* KaTeX_Main-Regular.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 978685475286573973420536 /* KaTeX_Main-Regular.woff2 */; };
+		7A3442F156D14D3408E56B51 /* BalanceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD6FFAC9F74A6BB7AD8B4CCF /* BalanceStore.swift */; };
 		7D8CEDAD74E641A6E803671B /* KaTeX_Main-Bold.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 87C7ADD17AE93333CA2A007E /* KaTeX_Main-Bold.woff2 */; };
 		7E31CD9BBBBF87736D87762C /* KaTeX_Main-Italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 284C3CBFF9EBDD3895F7B994 /* KaTeX_Main-Italic.woff2 */; };
 		7EDD79D13319B7A9D89C27A9 /* KaTeX_Size2-Regular.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 192E748671494E2E22E96313 /* KaTeX_Size2-Regular.woff2 */; };
@@ -82,6 +84,7 @@
 		817F9F5646EB7F0FFE46066A /* InlineRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4E7995057BCAD2BE6CA5409 /* InlineRenderer.swift */; };
 		8183D09DC87BEEF43B4B24E1 /* DataSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9080B0B7BA2554462EC6C68E /* DataSettingsView.swift */; };
 		8390F66E025C5615C3577E89 /* DeepSeekError.swift in Sources */ = {isa = PBXBuildFile; fileRef = F43A799168DE514BC00E3C11 /* DeepSeekError.swift */; };
+		83CC9E65CCA6057F6F3D22D3 /* FileAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54D3FB00CCAB05A329F40050 /* FileAttachment.swift */; };
 		84327F391C8F5A04EEB7D2BC /* MarkdownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EB29911B07E0C4CA22B4563 /* MarkdownView.swift */; };
 		890714DD91BD978C9FC99560 /* SettingsControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = F18E39FF0234A411715CF157 /* SettingsControls.swift */; };
 		897087D9371A28D8B7C01EDE /* KaTeX_Size1-Regular.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 1AAD88951CA84552D3BACAB1 /* KaTeX_Size1-Regular.woff2 */; };
@@ -172,6 +175,7 @@
 		F989994C7DF2FCBB60E58406 /* StreamEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBE05B6F5F3185D383E89FD1 /* StreamEvent.swift */; };
 		FDA62B71DBD21C24A1689746 /* KaTeX_SansSerif-Regular.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 9138DA58A61A35A3A1617EA5 /* KaTeX_SansSerif-Regular.woff2 */; };
 		FEA22DD50AB31CC616ECE0F0 /* MarkdownParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 354C92FDE579586485BD8F52 /* MarkdownParser.swift */; };
+		FF1B67E7CF87085BDB6B0AF1 /* BalanceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD6FFAC9F74A6BB7AD8B4CCF /* BalanceStore.swift */; };
 		FF9D3F3103F14051A5AD37CF /* KaTeX_SansSerif-Italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 896C9377E6AF7565AEAA3530 /* KaTeX_SansSerif-Italic.woff2 */; };
 /* End PBXBuildFile section */
 
@@ -199,6 +203,7 @@
 		46C01E9A8B3CBCC6B5947568 /* MermaidRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MermaidRenderer.swift; sourceTree = "<group>"; };
 		48C95D80359E6A43923C1838 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		534A419114E64D9C11A45A0D /* MathBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathBlockView.swift; sourceTree = "<group>"; };
+		54D3FB00CCAB05A329F40050 /* FileAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileAttachment.swift; sourceTree = "<group>"; };
 		57374768804C1633C573DF23 /* StreamAccumulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamAccumulator.swift; sourceTree = "<group>"; };
 		58AD2AD9DC901BD35CC2077F /* CodeBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeBlockView.swift; sourceTree = "<group>"; };
 		59C6751E622B6F3800838F3F /* DeepGlass-macOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "DeepGlass-macOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -235,6 +240,7 @@
 		B36C4149E090299B763D24B0 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
 		B370D9C84AF4F92ADDE92A4B /* KaTeX_Math-Italic.woff2 */ = {isa = PBXFileReference; path = "KaTeX_Math-Italic.woff2"; sourceTree = "<group>"; };
 		BC0AF2B91A0E38021FBEE11C /* LICENSE */ = {isa = PBXFileReference; path = LICENSE; sourceTree = "<group>"; };
+		BD6FFAC9F74A6BB7AD8B4CCF /* BalanceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BalanceStore.swift; sourceTree = "<group>"; };
 		BF16014AA5A730D3E4A4359A /* Tokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tokens.swift; sourceTree = "<group>"; };
 		C30055878C60545140932A2D /* OffscreenWebHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OffscreenWebHost.swift; sourceTree = "<group>"; };
 		C3C880093663A48E28D961B0 /* MarkdownPlatform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownPlatform.swift; sourceTree = "<group>"; };
@@ -471,6 +477,7 @@
 				F43A799168DE514BC00E3C11 /* DeepSeekError.swift */,
 				CDC850A2E5E521BE145ED7EC /* Domain.swift */,
 				6BD1339DC37C271CF7D5555A /* EventDecoder.swift */,
+				54D3FB00CCAB05A329F40050 /* FileAttachment.swift */,
 				D39D0C3F61D7C1708C6969C8 /* Placeholder.swift */,
 				DE8E5D6D2ACF86F26B6DFAAB /* Request.swift */,
 				EEE175FE9990D04AC4BAEE5F /* SSE.swift */,
@@ -498,6 +505,7 @@
 			children = (
 				0ADCFBA60D53EBF6F2CF1E63 /* AppearanceSync.swift */,
 				D758183B90351C9E17EAD79D /* AppSettings.swift */,
+				BD6FFAC9F74A6BB7AD8B4CCF /* BalanceStore.swift */,
 				CCFB914ACAE5AAE3D56F4EED /* ChatStore.swift */,
 				E8C29B65052E676FEAA9D89F /* DemoMode.swift */,
 				F8A762FFDE5263D1C268587A /* WindowConfigurator.swift */,
@@ -666,6 +674,7 @@
 				E69A51665C7C522C8FE357C8 /* AppearanceSync.swift in Sources */,
 				41AEFF21D5FE5FC55F612061 /* AssistantBody.swift in Sources */,
 				B20869C269099B3B831075A1 /* Atoms.swift in Sources */,
+				7A3442F156D14D3408E56B51 /* BalanceStore.swift in Sources */,
 				37B09EA25508A00C3BF95118 /* Block.swift in Sources */,
 				E9CA11AA4BF0A626F90312D0 /* CenteredColumn.swift in Sources */,
 				6A1F8D2716E73E664FE62E13 /* ChatMessage.swift in Sources */,
@@ -681,6 +690,7 @@
 				253416F75F21807C5ED22263 /* DesignGallery.swift in Sources */,
 				B961A6E469CBC787DE959A66 /* Domain.swift in Sources */,
 				BE81E9A14BEE969026EAB6C4 /* EventDecoder.swift in Sources */,
+				83CC9E65CCA6057F6F3D22D3 /* FileAttachment.swift in Sources */,
 				CD9EC2791C0D2FB65AAEAD71 /* GeneralSettingsView.swift in Sources */,
 				5A22C48A3119FB5B9C358279 /* Glass.swift in Sources */,
 				3ACE9A7438DBEB1257ED8D94 /* Hoverable.swift in Sources */,
@@ -731,6 +741,7 @@
 				2ECB68C8C1029D723C6FF794 /* AppearanceSync.swift in Sources */,
 				1DD9EBB742B26BCFA252C27A /* AssistantBody.swift in Sources */,
 				362E5EE791702A2991988ED0 /* Atoms.swift in Sources */,
+				FF1B67E7CF87085BDB6B0AF1 /* BalanceStore.swift in Sources */,
 				E54B2C7CA2246E3826F4F54E /* Block.swift in Sources */,
 				EDB82CBC472809B734D28B17 /* CenteredColumn.swift in Sources */,
 				75681C53175ABFCCBC696214 /* ChatMessage.swift in Sources */,
@@ -746,6 +757,7 @@
 				3B64AAC65983865F8C51747B /* DesignGallery.swift in Sources */,
 				8EBAF543D4067D5F3D422C3B /* Domain.swift in Sources */,
 				1D52F603FDE52CC5C923870D /* EventDecoder.swift in Sources */,
+				60C11C76ED463433589EAB40 /* FileAttachment.swift in Sources */,
 				8B677D81850A4800F817903E /* GeneralSettingsView.swift in Sources */,
 				C0036D1852773B2F8B548790 /* Glass.swift in Sources */,
 				A9C68DB16D2C1B767282F246 /* Hoverable.swift in Sources */,
@@ -797,6 +809,8 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleIconFile = AppIcon;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "语音输入需要使用麦克风";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "语音输入需要语音识别权限";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -821,6 +835,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleIconFile = AppIcon;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "语音输入需要使用麦克风";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "语音输入需要语音识别权限";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -910,6 +926,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleIconFile = AppIcon;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "语音输入需要使用麦克风";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "语音输入需要语音识别权限";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -927,6 +945,8 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleIconFile = AppIcon;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "语音输入需要使用麦克风";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "语音输入需要语音识别权限";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";

@@ -66,6 +66,10 @@ final class ChatStore {
         self.settings = settings
         self.storeURL = Self.makeStoreURL()
         load()
+        // 清理历史遗留的空会话（旧版本会点一次就建一个）
+        let before = sessions.count
+        sessions.removeAll { $0.messages.isEmpty && $0.draft.isEmpty && $0.title.isEmpty }
+        if sessions.count != before { scheduleSave(debounce: 0) }
         if activeID == nil { activeID = sessions.first?.id }
     }
 
@@ -90,6 +94,18 @@ final class ChatStore {
     func index(of id: UUID) -> Int? { sessions.firstIndex { $0.id == id } }
 
     // MARK: 会话操作
+
+    /// 点「开启新对话」只清空选择，真正建会话发生在第一条消息发送时。
+    func startNewConversation() {
+        activeID = nil
+    }
+
+    /// 从欢迎页发第一条消息：此时才创建会话。
+    @discardableResult
+    func sendNewConversation(text: String) -> Bool {
+        let id = newSession()
+        return send(text: text, in: id)
+    }
 
     @discardableResult
     func newSession(select: Bool = true) -> UUID {
@@ -340,6 +356,12 @@ final class ChatStore {
     // MARK: 持久化
 
     private static func makeStoreURL() -> URL {
+        // 支持独立数据目录，便于 QA 与真实使用隔离（绝不触碰用户数据）
+        if let custom = ProcessInfo.processInfo.environment["DEEPGLASS_STORE_DIR"], !custom.isEmpty {
+            let dir = URL(fileURLWithPath: custom, isDirectory: true)
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            return dir.appending(path: "sessions.json")
+        }
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? URL.temporaryDirectory
         let dir = base.appending(path: "DeepGlass", directoryHint: .isDirectory)

@@ -8,6 +8,8 @@ public struct Block: Codable, Sendable, Hashable, Identifiable {
         case toolUse
         case searchResults
         case fetchResult
+        /// 用户消息里的附件。只在请求侧编码成 image / document 块，不参与流式解码。
+        case file
     }
 
     /// 稳定标识：text / thinking 用 `b{index}`；工具块用服务端 tool_use id
@@ -23,6 +25,8 @@ public struct Block: Codable, Sendable, Hashable, Identifiable {
     public var toolUse: ServerToolUse?
     public var searchResults: [WebSearchResult]
     public var fetchResult: WebFetchResult?
+    /// kind == .file 的附件；旧会话数据里没有该字段，解码为 nil。
+    public var attachment: FileAttachment?
     /// 工具失败（web_search_tool_result_error / web_fetch_tool_result_error 等）。
     public var failed: Bool
 
@@ -35,7 +39,8 @@ public struct Block: Codable, Sendable, Hashable, Identifiable {
         toolUse: ServerToolUse? = nil,
         searchResults: [WebSearchResult] = [],
         fetchResult: WebFetchResult? = nil,
-        failed: Bool = false
+        failed: Bool = false,
+        attachment: FileAttachment? = nil
     ) {
         self.id = id
         self.kind = kind
@@ -46,5 +51,6 @@ public struct Block: Codable, Sendable, Hashable, Identifiable {
         self.searchResults = searchResults
         self.fetchResult = fetchResult
         self.failed = failed
+        self.attachment = attachment
     }
 }

@@ -53,6 +53,7 @@ final class AppSettings {
         static let search = "ds.search"
         static let theme = "ds.theme"
         static let sidebarCollapsed = "ds.sidebarCollapsed"
+        static let showsBalance = "ds.showsBalance"
         static let hasOnboarded = "ds.hasOnboarded"
     }
 
@@ -74,6 +75,14 @@ final class AppSettings {
     var sidebarCollapsed: Bool {
         didSet { UserDefaults.standard.set(sidebarCollapsed, forKey: Key.sidebarCollapsed) }
     }
+    /// 侧栏底部是否显示账户余额
+    var showsBalance: Bool {
+        didSet { UserDefaults.standard.set(showsBalance, forKey: Key.showsBalance) }
+    }
+
+    /// 仅本次运行的接口地址覆盖（演示 / QA 用），**不写入 UserDefaults**。
+    /// 曾经的坑：演示模式把 apiOrigin 持久化成 mock 地址，导致之后所有提问都拿到假回答。
+    var runtimeOrigin: String?
 
     /// 内存中的 API Key（初始化时从 Keychain 读取）
     private(set) var apiKey: String
@@ -85,7 +94,9 @@ final class AppSettings {
     }
 
     var hasAPIKey: Bool { !apiKey.isEmpty }
-    var isUsingMock: Bool { apiOrigin.contains("127.0.0.1") || apiOrigin.contains("localhost") }
+    /// 生效的接口地址：运行时覆盖优先
+    var effectiveOrigin: String { runtimeOrigin ?? apiOrigin }
+    var isUsingMock: Bool { effectiveOrigin.contains("127.0.0.1") || effectiveOrigin.contains("localhost") }
 
     init() {
         let defaults = UserDefaults.standard
@@ -95,6 +106,7 @@ final class AppSettings {
         self.search = defaults.object(forKey: Key.search) as? Bool ?? true
         self.theme = ThemePreference(rawValue: defaults.string(forKey: Key.theme) ?? "") ?? .system
         self.sidebarCollapsed = defaults.object(forKey: Key.sidebarCollapsed) as? Bool ?? false
+        self.showsBalance = defaults.object(forKey: Key.showsBalance) as? Bool ?? true
         // 开发/测试便捷路径：DEEPSEEK_API_KEY 环境变量优先于 Keychain，
         // 仅用于本地联调，发布构建请依赖 Keychain。
         if let envKey = ProcessInfo.processInfo.environment["DEEPSEEK_API_KEY"], !envKey.isEmpty {
@@ -125,7 +137,7 @@ final class AppSettings {
             keyStatus = .invalid("请先填写 API Key")
             return
         }
-        guard let origin = URL(string: apiOrigin) else {
+        guard let origin = URL(string: effectiveOrigin) else {
             keyStatus = .invalid("接口地址无效")
             return
         }
@@ -150,7 +162,7 @@ final class AppSettings {
 
     /// 供 ChatStore 使用：没有 Key 时退化为本地演示模式
     var client: DeepSeekClient? {
-        guard let origin = URL(string: apiOrigin) else { return nil }
+        guard let origin = URL(string: effectiveOrigin) else { return nil }
         return DeepSeekClient(apiOrigin: origin, apiKey: apiKey)
     }
 }

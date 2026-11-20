@@ -30,7 +30,7 @@ struct RootView: View {
                 SettingsView(settings: settings, onClearAll: { store.deleteAll() }, onClose: { showSettings = false })
             }
             .onReceive(NotificationCenter.default.publisher(for: .newSessionRequested)) { _ in
-                _ = store.newSession()
+                store.startNewConversation()
             }
             .onReceive(NotificationCenter.default.publisher(for: .settingsRequested)) { _ in
                 showSettings = true
@@ -39,13 +39,12 @@ struct RootView: View {
                 if CommandLine.arguments.contains("--dark") { settings.theme = .dark }
                 if CommandLine.arguments.contains("--settings") { showSettings = true }
                 guard DemoMode.isActive else { return }
-                settings.apiOrigin = DemoMode.origin
+                settings.runtimeOrigin = DemoMode.origin
                 settings.thinking = true
                 settings.search = true
                 try? await Task.sleep(for: .milliseconds(600))
-                let id = store.newSession()
                 try? await Task.sleep(for: .milliseconds(200))
-                _ = store.send(text: DemoMode.prompt, in: id)
+                _ = store.sendNewConversation(text: DemoMode.prompt)
             }
             #if os(macOS)
             .frame(minWidth: DS.Metrics.windowMinWidth, minHeight: DS.Metrics.windowMinHeight)
@@ -60,12 +59,15 @@ struct RootView: View {
                     settings: settings,
                     onOpenSettings: { showSettings = true },
                     onCollapse: { withAnimation(DS.Motion.fastEase) { settings.sidebarCollapsed = true } },
-                    onSelect: { store.select($0) }
+                    onSelect: { store.select($0) },
+                    onNewChat: nil
                 )
-                Rectangle()
-                    .fill(DS.Colors.borderL1)
-                    .frame(width: 1)
-                    .ignoresSafeArea()
+                .overlay(alignment: .trailing) {
+                    Rectangle()
+                        .fill(DS.Colors.borderL1)
+                        .frame(width: 1)
+                }
+                EmptyView()
             }
             detail
                 .background(DS.Colors.bgBase)
@@ -138,7 +140,8 @@ private struct SidebarSheet: View {
             onSelect: { id in
                 store.select(id)
                 dismiss()
-            }
+            },
+            onNewChat: { dismiss() }
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         #if os(iOS)

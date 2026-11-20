@@ -7,12 +7,15 @@ struct SiderView: View {
     var onOpenSettings: () -> Void
     var onCollapse: (() -> Void)?
     var onSelect: (UUID) -> Void
+    /// 移动端抽屉需要关闭；桌面端为 nil
+    var onNewChat: (() -> Void)?
 
     @State private var renaming: UUID?
     @State private var renameText: String = ""
     @State private var hovered: UUID?
     @State private var confirmDelete: UUID?
     @State private var now = Date.now
+    @State private var balance = BalanceStore.shared
 
     private var groups: [SessionGroup] { SessionGroup.group(store.sortedSessions, now: now) }
 
@@ -64,8 +67,8 @@ struct SiderView: View {
 
     private var newChatButton: some View {
         Button {
-            let id = store.newSession()
-            onSelect(id)
+            store.startNewConversation()
+            onNewChat?()
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "square.and.pencil")
@@ -139,9 +142,16 @@ struct SiderView: View {
                         .font(.system(size: 15))
                     Text("设置")
                         .font(DS.Typography.body)
-                    Spacer()
+                    Spacer(minLength: 6)
+                    if settings.showsBalance {
+                        Text(balance.displayText ?? (balance.isLoading ? "查询余额…" : "—"))
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(DS.Colors.labelTertiary)
+                            .lineLimit(1)
+                            .help(balance.lastError ?? "账户余额")
+                    }
                     Circle()
-                        .fill(settings.hasAPIKey ? Color.green.opacity(0.8) : DS.Colors.labelTertiary.opacity(0.5))
+                        .fill(settings.hasAPIKey ? Color.green.opacity(0.85) : DS.Colors.labelTertiary.opacity(0.5))
                         .frame(width: 6, height: 6)
                         .help(settings.hasAPIKey ? "已配置 API Key" : "未配置 API Key")
                 }
@@ -151,6 +161,21 @@ struct SiderView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .contextMenu {
+                Toggle("显示账户余额", isOn: Binding(
+                    get: { settings.showsBalance },
+                    set: { settings.showsBalance = $0 }
+                ))
+                Button("刷新余额") {
+                    Task { await balance.refresh(settings: settings, force: true) }
+                }
+            }
+            .task(id: settings.showsBalance) {
+                if settings.showsBalance { await balance.refresh(settings: settings) }
+            }
+            .task(id: settings.apiKey) {
+                if settings.showsBalance { await balance.refresh(settings: settings, force: true) }
+            }
         }
     }
 
@@ -161,8 +186,8 @@ struct SiderView: View {
             if reduceTransparency {
                 DS.Colors.sidebarFill
             } else {
-                VisualEffectBackground(material: .sidebar)
-                DS.Colors.sidebarFill.opacity(0.35)
+                VisualEffectBackground(material: .sidebar, blending: .withinWindow)
+                DS.Colors.sidebarFill.opacity(0.55)
             }
             #else
             DS.Colors.sidebarFill

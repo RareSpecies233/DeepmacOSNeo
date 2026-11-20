@@ -9,8 +9,9 @@ struct WindowConfigurator: NSViewRepresentable {
         let view = NSView()
         DispatchQueue.main.async {
             guard let window = view.window else { return }
-            window.isOpaque = false
-            window.backgroundColor = .clear
+            // 不透明窗口：避免侧栏与内容之间透出桌面，造成"没拼接上"的缝隙
+            window.isOpaque = true
+            window.backgroundColor = .windowBackgroundColor
             window.titlebarAppearsTransparent = true
             window.styleMask.insert(.fullSizeContentView)
             window.hasShadow = true

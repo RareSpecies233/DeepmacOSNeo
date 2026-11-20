@@ -44,8 +44,7 @@ struct WelcomeView: View {
     private func send() {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        let id = store.newSession()
-        store.send(text: trimmed, in: id)
+        store.sendNewConversation(text: trimmed)
         text = ""
     }
 }

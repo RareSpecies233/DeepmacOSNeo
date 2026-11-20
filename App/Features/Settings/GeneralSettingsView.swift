@@ -43,6 +43,14 @@ struct SettingsGeneralView: View {
                 subtitle: "按需搜索网页",
                 isOn: $bindable.search
             )
+
+            SettingsHairline()
+
+            SettingsToggleRow(
+                title: "显示账户余额",
+                subtitle: "在侧栏底部显示当前账户余额（读取 /user/balance）",
+                isOn: $bindable.showsBalance
+            )
             .padding(.vertical, 16)
 
             SettingsHairline()

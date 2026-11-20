@@ -34,33 +34,26 @@ struct ComposerView: View {
     // MARK: 文本区
 
     private var field: some View {
-        ZStack(alignment: .topLeading) {
-            if text.isEmpty {
-                Text(placeholder)
-                    .font(.system(size: 16))
-                    .foregroundStyle(DS.Colors.labelTertiary)
-                    .padding(.top, 12)
-                    .padding(.leading, 5)
-                    .allowsHitTesting(false)
-            }
-            TextField("", text: $text, axis: .vertical)
-                .textFieldStyle(.plain)
-                .font(.system(size: 16))
-                .lineSpacing(4)
-                .lineLimit(2...12)
-                .focused($focused)
-                .onSubmit {
-                    if canSend { onSend() }
-                }
-                .padding(.vertical, 12)
-                #if os(iOS)
-                .submitLabel(.send)
-                #endif
+        TextField(
+            "",
+            text: $text,
+            prompt: Text(placeholder).foregroundStyle(DS.Colors.labelTertiary),
+            axis: .vertical
+        )
+        .textFieldStyle(.plain)
+        .font(.system(size: 16))
+        .lineSpacing(4)
+        .lineLimit(2...12)
+        .focused($focused)
+        .onSubmit {
+            if canSend { onSend() }
         }
         .padding(.horizontal, 12)
+        .padding(.vertical, 12)
+        #if os(iOS)
+        .submitLabel(.send)
+        #endif
         .frame(maxWidth: .infinity, alignment: .leading)
-        .contentShape(Rectangle())
-        .onTapGesture { focused = true }
     }
 
     // MARK: 功能行

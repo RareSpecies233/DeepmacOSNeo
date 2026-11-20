@@ -38,13 +38,55 @@ public struct RequestMessage: Sendable, Encodable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(role.rawValue, forKey: .role)
         switch role {
-        case .user, .latestReminder:
+        case .user:
+            try encodeUserContent(into: &container)
+        case .latestReminder:
             try container.encode(userText, forKey: .content)
         case .assistant:
             var list = container.nestedUnkeyedContainer(forKey: .content)
             for block in assistantWireBlocks() {
                 try list.encode(block)
             }
+        }
+    }
+
+    /// 有已上传的附件时用内容块数组：**先文件后文本**（与参考实现 `toUserParam` 一致）。
+    /// 没有附件时保持字符串，老请求的形状不变；文本为空则不补空 text 块。
+    private func encodeUserContent(into container: inout KeyedEncodingContainer<CodingKeys>) throws {
+        let files = userFileBlocks()
+        guard !files.isEmpty else {
+            try container.encode(userText, forKey: .content)
+            return
+        }
+        var list = container.nestedUnkeyedContainer(forKey: .content)
+        for file in files {
+            try list.encode(file)
+        }
+        let text = userText
+        if !text.isEmpty {
+            try list.encode(WireTextBlock(text: text))
+        }
+    }
+
+    /// 请求里是否带文件块。客户端据此决定是否附带 `anthropic-beta: files-api-2025-04-14`。
+    public var hasFiles: Bool {
+        blocks.contains { block in
+            block.kind == .file && (block.attachment?.hasServerFileID ?? false)
+        }
+    }
+
+    /// 可上行的文件块：只取已拿到 file_id 的附件；未上传成功的跳过。
+    private func userFileBlocks() -> [WireFileBlock] {
+        blocks.compactMap { block in
+            guard block.kind == .file,
+                  let attachment = block.attachment,
+                  let fileID = attachment.fileID,
+                  !fileID.isEmpty
+            else { return nil }
+            return WireFileBlock(
+                blockType: attachment.isImage ? "image" : "document",
+                fileID: fileID
+            )
         }
     }
 
