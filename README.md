@@ -13,6 +13,7 @@
 |---|---|
 | ![iPhone](docs/screenshots/iphone.png) | ![iPad](docs/screenshots/ipad.png) |
 
+![来源面板](docs/screenshots/sources.png)
 ![设置](docs/screenshots/macos-settings.png)
 ![真实 API 对话](docs/screenshots/macos-real-api.png)
 
@@ -38,7 +39,7 @@
 
 **其它**
 - 会话：新建（惰性创建，点「开启新对话」不会产生空会话）/ 重命名 / 删除 / 置顶 / 按「今天·昨天·7 天内·30 天内·按月」分组
-- 消息分支：重新生成产生新版本，可 `‹ 2/3 ›` 切换；编辑用户消息后从该点分叉
+- 消息版本：重新生成产生新版本，可 `‹ 2/3 ›` 切换；编辑用户消息后从该点分叉
 - 双语：简体中文 / English，设置里实时切换
 - 附件：选择文件上传到 Files API（图片走 image 块、文档走 document 块），支持失败重试与移除
 - 语音：输入框内听写（Speech framework）、消息朗读（AVSpeechSynthesizer）

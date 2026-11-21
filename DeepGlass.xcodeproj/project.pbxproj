@@ -166,6 +166,7 @@
 		D54AD73959044B64B5519D50 /* KaTeX_SansSerif-Regular.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 9138DA58A61A35A3A1617EA5 /* KaTeX_SansSerif-Regular.woff2 */; };
 		D798907918E9CF913BECC85E /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 48C95D80359E6A43923C1838 /* README.md */; };
 		D7B0676CDE913DBBBE19A317 /* WindowConfigurator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A762FFDE5263D1C268587A /* WindowConfigurator.swift */; };
+		D7DB68A588D5BF6210C152B0 /* SourcesSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BE2A3C3405DFFE7D82C8AFB /* SourcesSheet.swift */; };
 		D7F050BE4A693E8A72B99047 /* ComposerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83C29A52F1E2368AF688744D /* ComposerView.swift */; };
 		D9F21709FC0DC51AFD26E4A0 /* MarkdownStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAA9B30B37D0C88C96D5DF82 /* MarkdownStyle.swift */; };
 		D9F2A17605121AAA3B214B69 /* ImageAttachmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D09FC6C6CC7D8A5F52F54BB4 /* ImageAttachmentView.swift */; };
@@ -183,6 +184,7 @@
 		E69A51665C7C522C8FE357C8 /* AppearanceSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ADCFBA60D53EBF6F2CF1E63 /* AppearanceSync.swift */; };
 		E6F0A6EEE5B592050A0A5257 /* InlineRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4E7995057BCAD2BE6CA5409 /* InlineRenderer.swift */; };
 		E74E59FF87D710E4D1D79498 /* DeepGlassApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67D9E37712A8708633796AA8 /* DeepGlassApp.swift */; };
+		E902578122EB41E3A0387948 /* SourcesSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BE2A3C3405DFFE7D82C8AFB /* SourcesSheet.swift */; };
 		E9CA11AA4BF0A626F90312D0 /* CenteredColumn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96D15225E7096F094264BA10 /* CenteredColumn.swift */; };
 		ED3501BAC683D5E317A1672C /* WindowDragHandle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46BBDF690C8EBBBF08B4421B /* WindowDragHandle.swift */; };
 		EDB82CBC472809B734D28B17 /* CenteredColumn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96D15225E7096F094264BA10 /* CenteredColumn.swift */; };
@@ -234,6 +236,7 @@
 		46BBDF690C8EBBBF08B4421B /* WindowDragHandle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowDragHandle.swift; sourceTree = "<group>"; };
 		46C01E9A8B3CBCC6B5947568 /* MermaidRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MermaidRenderer.swift; sourceTree = "<group>"; };
 		48C95D80359E6A43923C1838 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		4BE2A3C3405DFFE7D82C8AFB /* SourcesSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SourcesSheet.swift; sourceTree = "<group>"; };
 		534A419114E64D9C11A45A0D /* MathBlockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MathBlockView.swift; sourceTree = "<group>"; };
 		54D3FB00CCAB05A329F40050 /* FileAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileAttachment.swift; sourceTree = "<group>"; };
 		57374768804C1633C573DF23 /* StreamAccumulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamAccumulator.swift; sourceTree = "<group>"; };
@@ -521,6 +524,7 @@
 				96D15225E7096F094264BA10 /* CenteredColumn.swift */,
 				F5BA1CEBF3AF1B8A99A2DA76 /* ChatView.swift */,
 				9B4B9DD064A3DE9B1E913B79 /* MessageRow.swift */,
+				4BE2A3C3405DFFE7D82C8AFB /* SourcesSheet.swift */,
 				896648B6FA3F836F29CBA35B /* ThinkingTimeline.swift */,
 				B36C4149E090299B763D24B0 /* WelcomeView.swift */,
 			);
@@ -806,6 +810,7 @@
 				3B7CF23713A2E017EF7996E9 /* SettingsGlass.swift in Sources */,
 				F689BE7125401FB9A701EB5B /* SettingsView.swift in Sources */,
 				B0458363E789BBE6F415E6CA /* SiderView.swift in Sources */,
+				E902578122EB41E3A0387948 /* SourcesSheet.swift in Sources */,
 				976744369D0A2538E31FFCF5 /* StreamAccumulator.swift in Sources */,
 				F7D9833191125B77F759AA3C /* StreamEvent.swift in Sources */,
 				E04A84E5FFA22C82D0FF5505 /* SyntaxHighlighter.swift in Sources */,
@@ -886,6 +891,7 @@
 				DD7AC6C0A33B590C3DF51D4D /* SettingsGlass.swift in Sources */,
 				3E3E1D8B8F4A083E380B8E28 /* SettingsView.swift in Sources */,
 				BE67D50110E08FD4855D4BE0 /* SiderView.swift in Sources */,
+				D7DB68A588D5BF6210C152B0 /* SourcesSheet.swift in Sources */,
 				8005DC6457D04EBFA9A52D75 /* StreamAccumulator.swift in Sources */,
 				F989994C7DF2FCBB60E58406 /* StreamEvent.swift in Sources */,
 				1629B068B8BDBBD31683C77D /* SyntaxHighlighter.swift in Sources */,

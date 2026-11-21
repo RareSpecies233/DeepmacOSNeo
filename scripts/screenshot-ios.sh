@@ -1,6 +1,7 @@
 #!/bin/bash
 # 构建 → 装到模拟器 → 启动 → 截图
 set -uo pipefail
+export PATH="/opt/homebrew/bin:$PATH"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT" || exit 1
 DEVICE="${1:-iPhone 18 Pro}"

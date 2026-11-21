@@ -179,6 +179,8 @@ public struct ChatRequest: Sendable, Encodable {
     public var messages: [RequestMessage]
     /// → thinking.type enabled / disabled
     public var thinking: Bool
+    /// → thinking.budget_tokens（可选）。仅 thinking == true 时下发。
+    public var thinkingBudget: Int?
     /// → 声明 deepseek_web_search
     public var search: Bool
     /// → 声明 deepseek_read_url
@@ -191,6 +193,7 @@ public struct ChatRequest: Sendable, Encodable {
         system: String,
         messages: [RequestMessage],
         thinking: Bool = false,
+        thinkingBudget: Int? = nil,
         search: Bool = false,
         readURL: Bool = false,
         titleGeneration: Bool = false
@@ -199,6 +202,7 @@ public struct ChatRequest: Sendable, Encodable {
         self.system = system
         self.messages = messages
         self.thinking = thinking
+        self.thinkingBudget = thinkingBudget
         self.search = search
         self.readURL = readURL
         self.titleGeneration = titleGeneration
@@ -220,7 +224,13 @@ public struct ChatRequest: Sendable, Encodable {
         try container.encode(model, forKey: .model)
         try container.encode(system, forKey: .system)
         try container.encode(messages, forKey: .messages)
-        try container.encode(ThinkingFlag(type: thinking ? "enabled" : "disabled"), forKey: .thinking)
+        try container.encode(
+            ThinkingFlag(
+                type: thinking ? "enabled" : "disabled",
+                budgetTokens: thinking ? thinkingBudget : nil
+            ),
+            forKey: .thinking
+        )
         try container.encode(tools, forKey: .tools)
         // 扩展模式：声明联网工具或阅读链接时固定带 high 安全审核。
         if search || readURL {
@@ -251,6 +261,13 @@ public struct ChatRequest: Sendable, Encodable {
 
 private struct ThinkingFlag: Encodable {
     let type: String
+    /// Anthropic 兼容层通用的推理预算字段；nil 时不下发，保持旧请求形状。
+    let budgetTokens: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case type
+        case budgetTokens = "budget_tokens"
+    }
 }
 
 private struct SafetyCheck: Encodable {

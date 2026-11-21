@@ -61,10 +61,24 @@ struct ThinkingTimeline: View {
     }
 
     private var title: String {
-        if hasResponse { return L10n.t(.thinkingDone) }
+        if hasResponse {
+            if let seconds = message.thinkingSeconds {
+                return Self.durationTitle(seconds)
+            }
+            return L10n.t(.thinkingDone)
+        }
         if !isStreaming { return L10n.t(.messageThinkStopped) }
         if toolBlocks.contains(where: { $0.kind == .searchResults }) { return L10n.t(.deepSearchSearching) }
         return L10n.t(.messageThinking)
+    }
+
+    /// 与参考实现一致：`已思考（用时 N 秒）` / `Thought for N seconds`，N 取整且至少 1。
+    private static func durationTitle(_ seconds: Double) -> String {
+        let count = max(1, Int(seconds.rounded()))
+        if L10n.language == .zhHans {
+            return "已思考（用时 \(count) 秒）"
+        }
+        return count == 1 ? "Thought for 1 second" : "Thought for \(count) seconds"
     }
 }
 

@@ -2,6 +2,7 @@
 # 用法: scripts/build.sh <easy-name> [mac|ios]
 # 每个调用者用自己的 derivedDataPath，避免构建产物互相覆盖
 set -uo pipefail
+export PATH="/opt/homebrew/bin:$PATH"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 NAME="${1:-anon}"
 KIND="${2:-mac}"

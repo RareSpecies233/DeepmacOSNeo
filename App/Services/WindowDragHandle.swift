@@ -25,7 +25,8 @@ extension View {
     /// 让某个区域可拖动窗口（仅 macOS 生效）
     func windowDragArea() -> some View {
         #if os(macOS)
-        overlay(WindowDragHandle())
+        // 必须是 background：overlay 会盖在内容上，把「收起边栏」等按钮的点击全部吞掉。
+        background(WindowDragHandle())
         #else
         self
         #endif

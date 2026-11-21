@@ -25,6 +25,33 @@ enum ThemePreference: String, CaseIterable, Identifiable, Sendable {
 
 // MARK: - 模型
 
+/// 推理强度：映射到 Anthropic 兼容层的 thinking.budget_tokens。
+enum ReasoningEffort: String, CaseIterable, Identifiable, Sendable {
+    case fast, standard, deep
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .fast: "快速"
+        case .standard: "标准"
+        case .deep: "深入"
+        }
+    }
+    var budgetTokens: Int {
+        switch self {
+        case .fast: 1_024
+        case .standard: 4_096
+        case .deep: 16_384
+        }
+    }
+    var blurb: String {
+        switch self {
+        case .fast: "更快出结果，推理更浅"
+        case .standard: "均衡（默认）"
+        case .deep: "更深推理，耗时更长"
+        }
+    }
+}
+
 struct ModelOption: Identifiable, Hashable, Sendable {
     let id: String
     let label: String
@@ -51,6 +78,7 @@ final class AppSettings {
         static let model = "ds.model"
         static let thinking = "ds.thinking"
         static let search = "ds.search"
+        static let reasoningEffort = "ds.reasoningEffort"
         static let theme = "ds.theme"
         static let language = "ds.language"
         static let sidebarCollapsed = "ds.sidebarCollapsed"
@@ -69,6 +97,10 @@ final class AppSettings {
     }
     var search: Bool {
         didSet { UserDefaults.standard.set(search, forKey: Key.search) }
+    }
+    /// 推理强度（仅 thinking == true 时生效）
+    var reasoningEffort: ReasoningEffort {
+        didSet { UserDefaults.standard.set(reasoningEffort.rawValue, forKey: Key.reasoningEffort) }
     }
     var theme: ThemePreference {
         didSet { UserDefaults.standard.set(theme.rawValue, forKey: Key.theme) }
@@ -100,7 +132,11 @@ final class AppSettings {
 
     var hasAPIKey: Bool { !apiKey.isEmpty }
     /// 生效的接口地址：运行时覆盖优先
-    var effectiveOrigin: String { runtimeOrigin ?? apiOrigin }
+    var effectiveOrigin: String {
+        if let runtimeOrigin, !runtimeOrigin.isEmpty { return runtimeOrigin }
+        let trimmed = apiOrigin.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? "https://api.deepseek.com" : trimmed
+    }
     var isUsingMock: Bool { effectiveOrigin.contains("127.0.0.1") || effectiveOrigin.contains("localhost") }
 
     init() {
@@ -109,6 +145,7 @@ final class AppSettings {
         self.model = defaults.string(forKey: Key.model) ?? "deepseek-flash"
         self.thinking = defaults.object(forKey: Key.thinking) as? Bool ?? true
         self.search = defaults.object(forKey: Key.search) as? Bool ?? true
+        self.reasoningEffort = ReasoningEffort(rawValue: defaults.string(forKey: Key.reasoningEffort) ?? "") ?? .standard
         self.theme = ThemePreference(rawValue: defaults.string(forKey: Key.theme) ?? "") ?? .system
         self.language = AppLanguage(rawValue: defaults.string(forKey: Key.language) ?? "") ?? .zhHans
         self.sidebarCollapsed = defaults.object(forKey: Key.sidebarCollapsed) as? Bool ?? false

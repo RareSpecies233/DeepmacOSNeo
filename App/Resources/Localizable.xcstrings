@@ -6,13 +6,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "API usage demo"
+            "value": "DeepGlass"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "API 使用 demo"
+            "value": "DeepGlass"
           }
         }
       }

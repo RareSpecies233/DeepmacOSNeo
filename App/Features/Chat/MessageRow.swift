@@ -11,8 +11,34 @@ struct MessageRow: View {
     var onSelectVersion: ((String) -> Void)?
     var onRegenerate: (() -> Void)?
     var onEditUserMessage: (() -> Void)?
+    /// 从此处分叉；由 ChatView 注入，未接线时为 nil（按钮不出现）。
+    var onFork: (() -> Void)? = nil
     @State private var hovered = false
     @State private var copied = false
+    @State private var sourcesPresentation: SourcesSheetPresentation?
+
+    /// 搜索结果 + 仅被正文引用到的页面，编号与角标一致。
+    private var sourceCatalog: [ChatSource] { ChatSourceCatalog.sources(for: message) }
+
+    /// 正文角标：同一 URL 只插一次，编号取来源面板里的行号。
+    private var citationBadges: [CitationBadge] {
+        let catalog = sourceCatalog
+        var seen = Set<String>()
+        var badges: [CitationBadge] = []
+        for block in message.blocks where block.kind == .text {
+            for citation in block.citations where seen.insert(citation.url).inserted {
+                guard let source = catalog.first(where: { $0.url == citation.url }) else { continue }
+                badges.append(
+                    CitationBadge(
+                        number: source.index,
+                        url: citation.url,
+                        citedText: citation.citedText
+                    )
+                )
+            }
+        }
+        return badges
+    }
 
     var body: some View {
         switch message.role {
@@ -63,7 +89,14 @@ struct MessageRow: View {
             }
 
             if !message.plainText.isEmpty {
-                AssistantBody(text: message.plainText, isStreaming: isStreaming)
+                AssistantBody(
+                    text: message.plainText,
+                    badges: citationBadges,
+                    onOpenCitation: { number in
+                        openCitation(number)
+                    },
+                    isStreaming: isStreaming
+                )
             } else if isStreaming && message.blocks.isEmpty {
                 HStack(spacing: 8) {
                     ProgressView().controlSize(.small)
@@ -78,6 +111,13 @@ struct MessageRow: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .onHover { hovered = $0 }
+        .sheet(item: $sourcesPresentation) { presentation in
+            SourcesSheet(
+                sources: sourceCatalog,
+                highlightedIndex: presentation.highlightedSource,
+                onClose: { sourcesPresentation = nil }
+            )
+        }
     }
 
     private var actionBar: some View {
@@ -94,6 +134,14 @@ struct MessageRow: View {
             }
             if !message.plainText.isEmpty {
                 ReadAloudButton(text: message.plainText)
+            }
+            if !message.sources.isEmpty {
+                SourceCountButton(count: sourceCatalog.count) {
+                    sourcesPresentation = SourcesSheetPresentation(highlightedSource: nil)
+                }
+            }
+            if let onFork {
+                ActionIcon(systemName: "arrow.triangle.branch", help: "从此处分叉", action: onFork)
             }
             if isLastAssistant && !isStreaming, let onRegenerate {
                 ActionIcon(systemName: "arrow.clockwise", help: "重新生成", action: onRegenerate)
@@ -143,6 +191,11 @@ struct MessageRow: View {
         NSPasteboard.general.setString(text, forType: .string)
         #endif
     }
+
+    /// 正文角标点击：打开来源面板并高亮对应行。
+    private func openCitation(_ number: Int) {
+        sourcesPresentation = SourcesSheetPresentation(highlightedSource: number)
+    }
 }
 
 private struct ActionIcon: View {
@@ -169,5 +222,38 @@ private struct ActionIcon: View {
         .opacity(isEnabled ? 1 : 0.35)
         .onHover { hovered = $0 }
         .help(help)
+    }
+}
+
+/// 操作栏里的「来源 N」：只在有搜索结果时出现。
+private struct SourceCountButton: View {
+    let count: Int
+    let action: () -> Void
+    @State private var hovered = false
+
+    private var label: String {
+        L10n.language == .zhHans ? "来源 \(count)" : "Sources \(count)"
+    }
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 4) {
+                Image(systemName: "globe")
+                    .font(.system(size: 10.5, weight: .medium))
+                Text(label)
+                    .font(.system(size: 11.5, weight: .medium))
+            }
+            .foregroundStyle(DS.Colors.labelTertiary)
+            .padding(.horizontal, 7)
+            .frame(height: 24)
+            .background {
+                RoundedRectangle(cornerRadius: DS.Radius.s)
+                    .fill(hovered ? DS.Colors.interactiveHover : .clear)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovered = $0 }
+        .help(L10n.language == .zhHans ? "查看来源" : "View sources")
     }
 }

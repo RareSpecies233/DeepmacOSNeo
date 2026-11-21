@@ -10,6 +10,15 @@ struct WelcomeView: View {
     @State private var showFileImporter = false
     @State private var uploader = FileUploader()
     @FocusState private var focused: Bool
+    /// 文件正被拖到欢迎页上（用于整页蒙层与输入框高亮）
+    @State private var isDropTargeted = false
+
+    /// 统一口径（与 ChatView 一致）：有文字**或**有 `.ready` 附件；
+    /// 欢迎页没有流式生成，不存在「生成中」态。
+    private var canSend: Bool {
+        let hasText = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        return hasText || attachments.contains { $0.state == .ready }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -25,16 +34,19 @@ struct WelcomeView: View {
                     text: $text,
                     thinking: Binding(get: { settings.thinking }, set: { settings.thinking = $0 }),
                     search: Binding(get: { settings.search }, set: { settings.search = $0 }),
+                    model: Binding(get: { settings.model }, set: { settings.model = $0 }),
+                    reasoningEffort: Binding(get: { settings.reasoningEffort },
+                                             set: { settings.reasoningEffort = $0 }),
                     isStreaming: false,
-                    canSend: !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                        || attachments.contains { $0.state == .ready },
+                    canSend: canSend,
                     onSend: send,
                     onStop: {},
                     onAttach: { showFileImporter = true },
                     isHome: true,
                     attachments: attachments,
                     onRemoveAttachment: { id in attachments.removeAll { $0.id == id } },
-                    onRetryAttachment: retry
+                    onRetryAttachment: retry,
+                    isDropTargeted: isDropTargeted
                 )
             }
             // 原版：容器 max-width 840（含 padding 0 32px）→ 输入框 776
@@ -48,6 +60,9 @@ struct WelcomeView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(DS.Colors.bgBase)
+        .fileDropTarget(isTargeted: $isDropTargeted) { urls in
+            addDroppedFiles(urls)
+        }
         .onAppear { focused = true }
         .fileImporter(
             isPresented: $showFileImporter,
@@ -91,10 +106,27 @@ struct WelcomeView: View {
 
     private func send() {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        store.sendNewConversation(text: trimmed,
-                                  attachments: attachments.filter { $0.state == .ready })
+        let ready = attachments.filter { $0.state == .ready }
+        // 只发文件：没有文字但有 `.ready` 附件时同样允许发送。
+        guard !trimmed.isEmpty || !ready.isEmpty else { return }
+        store.sendNewConversation(text: trimmed, attachments: ready)
         text = ""
         attachments = []
+    }
+
+    /// 拖拽落入的文件：与「选择文件」走同一条 `AttachmentIngest` 编排。
+    private func addDroppedFiles(_ urls: [URL]) {
+        guard !urls.isEmpty else { return }
+        AttachmentIngest.ingest(
+            urls,
+            settings: settings,
+            uploader: uploader,
+            add: { attachments.append($0) },
+            update: { item in
+                if let index = attachments.firstIndex(where: { $0.id == item.id }) {
+                    attachments[index] = item
+                }
+            }
+        )
     }
 }

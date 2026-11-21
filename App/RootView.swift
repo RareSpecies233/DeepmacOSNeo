@@ -38,6 +38,16 @@ struct RootView: View {
             .task {
                 if CommandLine.arguments.contains("--dark") { settings.theme = .dark }
                 if CommandLine.arguments.contains("--settings") { showSettings = true }
+                if CommandLine.arguments.contains("--qa-fork") {
+                    let id = store.newSession()
+                    _ = store.send(text: "用一句话解释什么是上下文窗口", in: id)
+                    while store.isStreaming(id) { try? await Task.sleep(for: .milliseconds(200)) }
+                    try? await Task.sleep(for: .milliseconds(400))
+                    if let lastAssistant = store.session(id)?.messages.last(where: { $0.role == .assistant }) {
+                        _ = store.fork(sessionID: id, after: lastAssistant.id)
+                    }
+                    return
+                }
                 if CommandLine.arguments.contains("--qa-branch") {
                     // QA：连续两次「重新生成」，用于验证 ‹2/3› 版本切换
                     let id = store.newSession()

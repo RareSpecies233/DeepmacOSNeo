@@ -323,6 +323,27 @@ final class ChatStore {
         scheduleSave()
     }
 
+    /// 从某条助手消息分叉：新会话保留该消息及其之前的全部上下文。
+    @discardableResult
+    func fork(sessionID: UUID, after messageID: String) -> UUID? {
+        guard let i = index(of: sessionID) else { return nil }
+        let source = sessions[i]
+        guard let cut = source.messages.firstIndex(where: { $0.id == messageID }) else { return nil }
+
+        var copy = ChatSession(
+            title: String("\(source.displayTitle)（分支）".prefix(80)),
+            model: source.model,
+            thinking: source.thinking,
+            search: source.search
+        )
+        copy.messages = Array(source.messages[...cut])
+        copy.updatedAt = .now
+        sessions.insert(copy, at: 0)
+        activeID = copy.id
+        scheduleSave()
+        return copy.id
+    }
+
     /// 编辑用户消息并重新请求：截断该消息之后的所有消息（含其版本组），
     /// 原地替换文本，然后自动发起新的回答。
     @discardableResult
@@ -461,6 +482,8 @@ final class ChatStore {
         streams[sessionID] = nil
         streamingSessionIDs.remove(sessionID)
         scheduleSave(debounce: 0.2)
+        // 每轮结束刷新一次余额，配合侧栏的定时刷新实现"动态更新"
+        Task { await BalanceStore.shared.refresh(settings: settings, force: true) }
     }
 
     private func stopStreaming(for sessionID: UUID) {
@@ -491,6 +514,7 @@ final class ChatStore {
             system: Self.systemPrompt,
             messages: history,
             thinking: session.thinking,
+            thinkingBudget: session.thinking ? settings.reasoningEffort.budgetTokens : nil,
             search: session.search,
             readURL: true,
             titleGeneration: generateTitle

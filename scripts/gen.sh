@@ -1,6 +1,7 @@
 #!/bin/bash
 # 带锁的工程生成：多个代理可并发调用而不会同时写 .xcodeproj
 set -e
+export PATH="/opt/homebrew/bin:$PATH"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 LOCK="/tmp/deepglass-xcodegen.lock"
 for i in $(seq 1 60); do

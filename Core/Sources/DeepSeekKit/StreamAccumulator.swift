@@ -8,8 +8,16 @@ public struct StreamAccumulator: Sendable {
 
     /// SSE 的 content block index → message.blocks 下标。
     private var blockIndexes: [Int: Int] = [:]
+    /// 计时来源；测试可注入固定时钟。
+    private let now: @Sendable () -> Date
 
-    public init(id: String, model: String, createdAt: Date = .now) {
+    public init(
+        id: String,
+        model: String,
+        createdAt: Date = .now,
+        now: @escaping @Sendable () -> Date = { Date() }
+    ) {
+        self.now = now
         message = ChatMessage(
             id: id,
             role: .assistant,
@@ -29,12 +37,15 @@ public struct StreamAccumulator: Sendable {
         case let .blockStart(index, block):
             blockIndexes[index] = message.blocks.count
             message.blocks.append(block)
+            // 第一次出现正文块：客户端计时到此结束（此前必须有思考块）。
+            if block.kind == .text { recordThinkingSecondsIfNeeded() }
 
         case let .textDelta(index, text):
             guard let position = position(for: index),
                   message.blocks[position].kind == .text
             else { return }
             message.blocks[position].text += text
+            recordThinkingSecondsIfNeeded()
 
         case let .thinkingDelta(index, text):
             guard let position = position(for: index),
@@ -75,6 +86,16 @@ public struct StreamAccumulator: Sendable {
     public mutating func finish(status: MessageStatus, error: String? = nil) {
         message.status = status
         message.errorText = error
+        // 没有正文（被中止 / 失败 / 纯思考）时用总时长兜底。
+        recordThinkingSecondsIfNeeded()
+    }
+
+    /// 只在第一次正文出现时写一次；已有思考块才有意义。
+    private mutating func recordThinkingSecondsIfNeeded() {
+        guard message.thinkingSeconds == nil,
+              message.blocks.contains(where: { $0.kind == .thinking })
+        else { return }
+        message.thinkingSeconds = max(0, now().timeIntervalSince(message.createdAt))
     }
 
     private func position(for index: Int) -> Int? {

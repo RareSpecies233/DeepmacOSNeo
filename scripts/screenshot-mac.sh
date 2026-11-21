@@ -1,6 +1,7 @@
 #!/bin/bash
 # 构建 → 启动 → 截取 DeepGlass 窗口 → 输出到 .screenshots/mac-<name>.png
 set -uo pipefail
+export PATH="/opt/homebrew/bin:$PATH"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT" || exit 1
 NAME="${1:-main}"

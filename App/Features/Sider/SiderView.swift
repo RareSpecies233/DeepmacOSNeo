@@ -16,6 +16,7 @@ struct SiderView: View {
     @State private var confirmDelete: UUID?
     @State private var now = Date.now
     @State private var balance = BalanceStore.shared
+    @Environment(\.scenePhase) private var scenePhase
 
     private var groups: [SessionGroup] { SessionGroup.group(store.sortedSessions, now: now) }
 
@@ -191,6 +192,18 @@ struct SiderView: View {
             }
             .task(id: settings.apiKey) {
                 if settings.showsBalance { await balance.refresh(settings: settings, force: true) }
+            }
+            // 余额是动态的：每 90 秒静默刷新一次；回到前台立即刷新一次。
+            .task {
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .seconds(90))
+                    guard settings.showsBalance else { continue }
+                    await balance.refresh(settings: settings, force: true)
+                }
+            }
+            .onChange(of: scenePhase) { _, phase in
+                guard phase == .active, settings.showsBalance else { return }
+                Task { await balance.refresh(settings: settings, force: true) }
             }
         }
     }

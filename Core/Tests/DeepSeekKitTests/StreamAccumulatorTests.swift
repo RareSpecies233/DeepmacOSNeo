@@ -168,4 +168,66 @@ final class StreamAccumulatorTests: XCTestCase {
         XCTAssertEqual(accumulator.message.id, "m1")
         XCTAssertTrue(accumulator.message.blocks.isEmpty)
     }
+
+    // MARK: 思考用时（客户端计时）
+
+    /// 测试用可拨动时钟。
+    private final class TestClock: @unchecked Sendable {
+        var now: Date
+        init(_ now: Date) { self.now = now }
+    }
+
+    func testThinkingSecondsRecordedWhenFirstTextArrives() {
+        let start = Date(timeIntervalSince1970: 1_000)
+        let clock = TestClock(start)
+        var accumulator = StreamAccumulator(
+            id: "m1",
+            model: "deepseek-flash",
+            createdAt: start,
+            now: { clock.now }
+        )
+
+        accumulator.apply(.blockStart(index: 0, block: Block(id: "b0", kind: .thinking)))
+        accumulator.apply(.thinkingDelta(index: 0, "先想一想"))
+
+        clock.now = start.addingTimeInterval(3.6)
+        accumulator.apply(.blockStart(index: 1, block: Block(id: "b1", kind: .text)))
+        XCTAssertEqual(accumulator.message.thinkingSeconds ?? -1, 3.6, accuracy: 0.0001)
+
+        // 后续正文增量与新的正文块都不应覆盖首次记录。
+        clock.now = start.addingTimeInterval(9)
+        accumulator.apply(.textDelta(index: 1, "正文"))
+        accumulator.apply(.blockStart(index: 2, block: Block(id: "b2", kind: .text)))
+        XCTAssertEqual(accumulator.message.thinkingSeconds ?? -1, 3.6, accuracy: 0.0001)
+    }
+
+    func testThinkingSecondsFallsBackToTotalDurationAtFinish() {
+        let start = Date(timeIntervalSince1970: 2_000)
+        let clock = TestClock(start)
+        var accumulator = StreamAccumulator(
+            id: "m1",
+            model: "deepseek-flash",
+            createdAt: start,
+            now: { clock.now }
+        )
+
+        accumulator.apply(.blockStart(index: 0, block: Block(id: "b0", kind: .thinking)))
+        accumulator.apply(.thinkingDelta(index: 0, "只思考，没有正文"))
+
+        clock.now = start.addingTimeInterval(5.25)
+        accumulator.finish(status: .stopped)
+        XCTAssertEqual(accumulator.message.thinkingSeconds ?? -1, 5.25, accuracy: 0.0001)
+
+        // 没有思考块时保持 nil。
+        var plain = StreamAccumulator(
+            id: "m2",
+            model: "deepseek-flash",
+            createdAt: start,
+            now: { clock.now }
+        )
+        plain.apply(.blockStart(index: 0, block: Block(id: "b0", kind: .text)))
+        plain.apply(.textDelta(index: 0, "直接回答"))
+        plain.finish(status: .complete)
+        XCTAssertNil(plain.message.thinkingSeconds)
+    }
 }

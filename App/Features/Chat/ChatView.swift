@@ -16,9 +16,14 @@ struct ChatView: View {
     /// 是否跟随到底部：用户向上滑后置 false，避免流式生成时抢滚动
     @State private var followBottom = true
     @State private var lastAutoScroll = Date.distantPast
+    /// 刚发送消息后的短暂「强制跟随」窗口：期间忽略几何回调把 followBottom 置 false，
+    /// 否则新消息把内容撑高会被判成"用户离开了底部"，第二次回答就不再自动滚动。
+    @State private var pinUntil = Date.distantPast
     @State private var showFileImporter = false
     @State private var uploader = FileUploader()
     @State private var editingDraft: EditDraft?
+    /// 文件正被拖到窗口上（用于整页蒙层与输入框高亮）
+    @State private var isDropTargeted = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -29,6 +34,9 @@ struct ChatView: View {
             composer
         }
         .background(DS.Colors.bgBase)
+        .fileDropTarget(isTargeted: $isDropTargeted) { urls in
+            addDroppedFiles(urls)
+        }
         .sheet(item: $editingDraft) { draft in
             EditMessageSheet(initialText: draft.text) {
                 editingDraft = nil
@@ -90,7 +98,11 @@ struct ChatView: View {
                                 onRegenerate: { store.regenerate(sessionID: sessionID) },
                                 onEditUserMessage: message.role == .user && !isStreaming
                                     ? { editingDraft = EditDraft(id: message.id, text: message.plainText) }
-                                    : nil
+                                    : nil,
+                                // 流式生成中不给分叉入口：此时消息还不完整。
+                                onFork: isStreaming
+                                    ? nil
+                                    : { _ = store.fork(sessionID: sessionID, after: message.id) }
                             )
                         }
                     }
@@ -106,6 +118,7 @@ struct ChatView: View {
                 // 距底部还有多远（>0 表示已经离开底部）
                 geometry.contentSize.height - (geometry.contentOffset.y + geometry.containerSize.height)
             } action: { _, distanceFromBottom in
+                guard Date() >= pinUntil else { return }
                 // 阈值给足：内容内边距、圆角与安全区都会被算进 contentSize，
                 // 阈值过小会在明明贴底时误判为"已离开底部"。
                 let atBottom = distanceFromBottom < 200
@@ -113,8 +126,19 @@ struct ChatView: View {
                     followBottom = atBottom
                 }
             }
+            .onChange(of: messageCount) { oldValue, newValue in
+                // 用户发出一条消息（消息数增加且末条是用户消息）→ 强制跟随到最新
+                guard newValue > oldValue,
+                      session?.messages.last?.role == .user else { return }
+                pinUntil = Date().addingTimeInterval(2.5)
+                followBottom = true
+                lastAutoScroll = .distantPast
+                DispatchQueue.main.async {
+                    proxy.scrollTo(bottomAnchor, anchor: .bottom)
+                }
+            }
             .onChange(of: scrollSignature) { _, _ in
-                guard followBottom else { return }
+                guard followBottom || Date() < pinUntil else { return }
                 // 流式期间节流，避免每个 token 都触发一次滚动导致卡顿
                 let now = Date()
                 guard now.timeIntervalSince(lastAutoScroll) > 0.08 else { return }
@@ -154,10 +178,26 @@ struct ChatView: View {
         }
     }
 
+    /// 统一口径（与 WelcomeView 一致）：有文字**或**有 `.ready` 附件，且不在流式生成中。
     private var canSend: Bool {
         let hasText = !(session?.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
         let hasFiles = session?.draftAttachments.contains { $0.state == .ready } ?? false
-        return hasText || hasFiles
+        return (hasText || hasFiles) && !isStreaming
+    }
+
+    /// 拖拽落入的文件：与「选择文件」走同一条 `AttachmentIngest` 编排。
+    /// 读不到内容（无权限 / 已移动）由上传层置为失败态，UI 显示并可重试。
+    private func addDroppedFiles(_ urls: [URL]) {
+        guard !urls.isEmpty else { return }
+        AttachmentIngest.ingest(
+            urls,
+            settings: settings,
+            uploader: uploader,
+            add: { store.addDraftAttachment($0, in: sessionID) },
+            update: { item in
+                store.updateDraftAttachment(item.id, in: sessionID) { _ in item }
+            }
+        )
     }
 
     private func retryAttachment(_ id: String) {
@@ -174,6 +214,8 @@ struct ChatView: View {
             }
         )
     }
+
+    private var messageCount: Int { session?.messages.count ?? 0 }
 
     /// 用于触发滚动的轻量签名：可见消息条数 + 末条内容长度
     private var scrollSignature: Int {
@@ -199,17 +241,26 @@ struct ChatView: View {
                 get: { session?.search ?? true },
                 set: { store.setSearch(sessionID, $0) }
             ),
+            model: Binding(
+                get: { session?.model ?? settings.model },
+                set: { store.setModel(sessionID, $0) }
+            ),
+            reasoningEffort: Binding(
+                get: { settings.reasoningEffort },
+                set: { settings.reasoningEffort = $0 }
+            ),
             isStreaming: isStreaming,
             canSend: canSend,
             onSend: { _ = store.send(text: session?.draft ?? "",
-                                      attachments: session?.draftAttachments ?? [],
+                                      attachments: (session?.draftAttachments ?? []).filter { $0.state == .ready },
                                       in: sessionID) },
             onStop: { store.stop(sessionID: sessionID) },
             onAttach: { showFileImporter = true },
             attachments: session?.draftAttachments ?? [],
             attachmentProgress: store.uploadProgress,
             onRemoveAttachment: { store.removeDraftAttachment($0, in: sessionID) },
-            onRetryAttachment: { retryAttachment($0) }
+            onRetryAttachment: { retryAttachment($0) },
+            isDropTargeted: isDropTargeted
         )
         .padding(.horizontal, DS.Metrics.messageListPadding)
         .frame(maxWidth: DS.Metrics.messageListMaxWidth)

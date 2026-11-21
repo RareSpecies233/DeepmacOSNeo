@@ -17,6 +17,11 @@ public struct ChatMessage: Identifiable, Codable, Sendable, Hashable {
     public var model: String?
     public var stopReason: String?
     public var errorText: String?
+    /// 思考用时（秒）。协议没有块级时间戳，由客户端在首个正文到达时测得。
+    ///
+    /// 必须保持 Optional：合成 Codable 对非可选字段用 `decode`，旧版 sessions.json
+    /// 缺这个 key 会直接抛错（整个会话库被静默清空）。
+    public var thinkingSeconds: Double?
 
     public init(
         id: String,
@@ -26,7 +31,8 @@ public struct ChatMessage: Identifiable, Codable, Sendable, Hashable {
         status: MessageStatus = .streaming,
         model: String? = nil,
         stopReason: String? = nil,
-        errorText: String? = nil
+        errorText: String? = nil,
+        thinkingSeconds: Double? = nil
     ) {
         self.id = id
         self.role = role
@@ -36,6 +42,7 @@ public struct ChatMessage: Identifiable, Codable, Sendable, Hashable {
         self.model = model
         self.stopReason = stopReason
         self.errorText = errorText
+        self.thinkingSeconds = thinkingSeconds
     }
 
     /// 所有 `.text` 块按序拼接（不含引用）。
